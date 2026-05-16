@@ -1,7 +1,7 @@
 <template>
   <div class="stats-row">
     <div class="stat">
-      <div class="stat-label">Utenti L1</div>
+      <div class="stat-label">Utenti</div>
       <div class="stat-val">{{ utenti.length }}</div>
     </div>
     <div class="stat">
@@ -74,5 +74,5 @@
 const utenti: { nome: string; ruolo: string; iniziali: string; online: boolean; av: string }[] = []
 const timbrature: { nome: string; ora: string; tipo: string }[] = []
 const permessi: { nome: string; tipo: string; data: string }[] = []
-const planner: Record<string, string[]> = { Lun: [], Mar: [], Mer: [], Gio: [], Ven: [] }
+const planner: Record<string, string[]> = { Lun: [], Mar: [], Mer: [], Gio: [], Ven: [], Sab: [], Dom: [] }
 </script>

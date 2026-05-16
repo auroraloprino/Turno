@@ -294,7 +294,7 @@ body {
 
 /* ─── PLANNER ─── */
 .planner-grid, .plan-grid {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
 }
 .day-col   { background: var(--bg-tertiary); border-radius: 6px; padding: 8px 7px; }
 .day-label {
