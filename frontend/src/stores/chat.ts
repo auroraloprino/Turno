@@ -23,6 +23,7 @@ export interface Conversation {
   participants: number[]
   name: string
   messages: Message[]
+  unread: number
 }
 
 export const useChatStore = defineStore('chat', () => {
@@ -49,5 +50,10 @@ export const useChatStore = defineStore('chat', () => {
     })
   }
 
-  return { currentUser, conversations, setCurrentUser, sendMessage }
+  function markRead(conversationId: number) {
+    const conv = conversations.value.find(c => c.id === conversationId)
+    if (conv) conv.unread = 0
+  }
+
+  return { currentUser, conversations, setCurrentUser, sendMessage, markRead }
 })

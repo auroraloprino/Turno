@@ -8,7 +8,7 @@
           :key="conv.id"
           class="contact-row"
           :class="{ sel: activeId === conv.id }"
-          @click="activeId = conv.id"
+          @click="open(conv.id)"
         >
           <div class="av" :class="conv.type === 'group' ? 'admin' : ''">
             {{ conv.type === 'group' ? 'GRP' : initials(conv.name) }}
@@ -17,6 +17,7 @@
             <div class="c-name">{{ conv.name }}</div>
             <div class="c-prev">{{ conv.messages.at(-1)?.text ?? '' }}</div>
           </div>
+          <div v-if="conv.unread > 0" class="c-badge">{{ conv.unread }}</div>
         </div>
       </div>
 
@@ -63,7 +64,7 @@
 import { ref, computed, nextTick, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 
-const props = defineProps<{ adminControls?: boolean }>()
+defineProps<{ adminControls?: boolean }>()
 
 const store = useChatStore()
 const activeId = ref<number | null>(store.conversations[0]?.id ?? null)
@@ -74,6 +75,11 @@ const active = computed(() => store.conversations.find(c => c.id === activeId.va
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+}
+
+function open(id: number) {
+  activeId.value = id
+  store.markRead(id)
 }
 
 function send() {
