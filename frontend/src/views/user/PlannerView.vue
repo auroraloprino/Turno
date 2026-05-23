@@ -9,7 +9,6 @@
     </div>
   </div>
 
-  <!-- Weekly -->
   <div v-if="view === 'week'" class="plan-grid-7">
     <div v-for="date in currentWeekDates" :key="toDateKey(date)" class="day-col">
       <div class="day-label">
@@ -28,7 +27,6 @@
     </div>
   </div>
 
-  <!-- Monthly -->
   <div v-else class="month-grid">
     <div v-for="d in DAYS" :key="d" class="month-header">{{ d }}</div>
     <div v-for="_ in leadingBlanks" class="month-cell empty" />
@@ -61,7 +59,7 @@
 import { ref, computed } from 'vue'
 import { usePlannerStore, DAYS, toDateKey, weekDates, monthDates, weekLabel, monthLabel } from '@/stores/planner'
 
-const ME_ID = 1  // TODO: replace with auth store user id
+const ME_ID = 1
 
 const store  = usePlannerStore()
 const view   = ref<'week' | 'month'>('week')

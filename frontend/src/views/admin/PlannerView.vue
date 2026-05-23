@@ -1,5 +1,4 @@
 <template>
-  <!-- Nav bar -->
   <div class="plan-nav">
     <button class="btn-week" @click="offset--">&#8592;</button>
     <span class="week-label">{{ label }}</span>
@@ -10,7 +9,6 @@
     </div>
   </div>
 
-  <!-- Weekly view -->
   <div v-if="view === 'week'" class="plan-grid-7">
     <div v-for="date in currentWeekDates" :key="toDateKey(date)" class="day-col">
       <div class="day-label">
@@ -21,7 +19,6 @@
     </div>
   </div>
 
-  <!-- Monthly view -->
   <div v-else class="month-grid">
     <div v-for="d in DAYS" :key="d" class="month-header">{{ d }}</div>
     <div v-for="_ in leadingBlanks" class="month-cell empty" />
@@ -39,7 +36,6 @@
     </div>
   </div>
 
-  <!-- Day modal -->
   <Teleport to="body">
     <div v-if="modalDate" class="modal-backdrop" @click.self="modalDate = null">
       <div class="modal">
@@ -142,7 +138,7 @@ const groupedShifts = computed(() => {
   color: white;
 }
 
-/* ─── Weekly ─── */
+/* Weekly */
 .plan-grid-7 {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -164,7 +160,7 @@ const groupedShifts = computed(() => {
   margin-left: 4px;
 }
 
-/* ─── Monthly ─── */
+/* Monthly */
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -211,7 +207,7 @@ const groupedShifts = computed(() => {
   width: fit-content;
 }
 
-/* ─── Modal ─── */
+/* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;

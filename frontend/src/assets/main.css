@@ -40,14 +40,12 @@ body {
   display: flex;
 }
 
-/* ─── SHELL ─── */
 .shell {
   display: flex;
   width: 100%;
   min-height: 100vh;
 }
 
-/* ─── SIDEBAR ─── */
 .sidebar {
   width: 210px;
   min-width: 210px;
@@ -117,7 +115,6 @@ body {
 .nav-icon,
 .ni { width: 16px; height: 16px; flex-shrink: 0; }
 
-/* ─── USER CHIP ─── */
 .user-chip {
   margin-top: auto;
   padding: 14px 18px;
@@ -139,7 +136,6 @@ body {
 .chip-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .chip-role { font-size: 11px; color: var(--text-secondary); }
 
-/* ─── MAIN ─── */
 .main {
   flex: 1; display: flex; flex-direction: column;
   overflow-y: auto; background: var(--bg-primary);
@@ -161,7 +157,6 @@ body {
 
 .content { padding: 20px 22px; flex: 1; }
 
-/* ─── CARDS ─── */
 .card {
   background: var(--bg-secondary); border: 0.5px solid var(--border);
   border-radius: var(--radius-md); padding: 16px; margin-bottom: 14px;
@@ -177,7 +172,6 @@ body {
   gap: 12px; margin-bottom: 12px;
 }
 
-/* ─── STATS ─── */
 .stats-row {
   display: grid; grid-template-columns: repeat(4, 1fr);
   gap: 10px; margin-bottom: 14px;
@@ -192,7 +186,6 @@ body {
 .stat-val   { font-size: 28px; font-weight: 400; color: var(--text-primary); line-height: 1.1; }
 .stat-sub   { font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
 
-/* ─── AVATAR ─── */
 .avatar {
   width: 32px; height: 32px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
@@ -201,7 +194,6 @@ body {
 .av-purple { background: var(--purple-light); color: var(--purple-dark); }
 .av-teal   { background: var(--teal-light);   color: var(--teal-dark); }
 
-/* ─── PILLS ─── */
 .pill { font-size: 11px; padding: 3px 10px; border-radius: 10px; }
 .pill-online, .p-ok   { background: var(--green-light); color: var(--green-dark); }
 .pill-off              { background: var(--bg-tertiary); color: var(--text-tertiary); }
@@ -210,7 +202,6 @@ body {
 .p-pend                { background: var(--amber-light); color: var(--amber-dark); }
 .p-no                  { background: var(--coral-light); color: var(--coral-dark); }
 
-/* ─── USER ROW ─── */
 .user-row {
   display: flex; align-items: center; gap: 10px;
   padding: 8px 0; border-bottom: 0.5px solid var(--border);
@@ -220,7 +211,6 @@ body {
 .user-name { font-size: 13px; font-weight: 500; color: var(--text-primary); }
 .user-role { font-size: 11px; color: var(--text-secondary); }
 
-/* ─── TIMBRATURE ─── */
 .timb-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 0; border-bottom: 0.5px solid var(--border); font-size: 13px;
@@ -255,7 +245,6 @@ body {
 .hist-label { color: var(--text-secondary); }
 .hist-val   { color: var(--text-primary); flex: 1; text-align: right; margin-right: 10px; }
 
-/* ─── PERMESSI ─── */
 .perm-row {
   display: flex; justify-content: space-between; align-items: center;
   padding: 9px 0; border-bottom: 0.5px solid var(--border);
@@ -292,7 +281,6 @@ body {
 .perm-tipo { color: var(--text-primary); font-weight: 500; }
 .perm-d    { color: var(--text-secondary); font-size: 12px; margin-left: 4px; }
 
-/* ─── PLANNER ─── */
 .planner-grid, .plan-grid {
   display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;
 }
@@ -310,7 +298,6 @@ body {
 .plan-legend { display: flex; align-items: center; gap: 16px; margin-top: 12px; font-size: 11px; color: var(--text-secondary); }
 .legend-dot  { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
-/* ─── CHAT ─── */
 .chat-wrap      { display: flex; gap: 12px; height: 420px; }
 .chat-contacts  { width: 200px; min-width: 200px; display: flex; flex-direction: column; gap: 3px; }
 
@@ -355,7 +342,6 @@ body {
 }
 .chat-input-row input:focus { border-color: var(--purple); }
 
-/* ─── CREDENZIALI ─── */
 .cred-form  { display: flex; flex-direction: column; gap: 12px; max-width: 400px; }
 .form-group { display: flex; flex-direction: column; gap: 5px; }
 .form-group label { font-size: 12px; color: var(--text-secondary); }
@@ -378,7 +364,6 @@ body {
 .cred-table td { padding: 10px; border-bottom: 0.5px solid var(--border); color: var(--text-primary); }
 .cred-table tr:last-child td { border-bottom: none; }
 
-/* ─── BUTTONS ─── */
 .btn-primary {
   padding: 9px 20px; background: var(--purple); color: white;
   border: none; border-radius: var(--radius-md); font-size: 13px;
@@ -425,7 +410,6 @@ body {
 }
 .btn-msg:hover { opacity: 0.85; }
 
-/* ─── LOGIN ─── */
 .login-wrap {
   display: flex; align-items: center; justify-content: center;
   min-height: 100vh; width: 100%; background: #111;

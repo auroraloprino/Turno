@@ -13,7 +13,6 @@ export const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'] as const
 
 export const members: { id: number; name: string }[] = []
 
-// Shifts keyed by ISO date 'YYYY-MM-DD'
 export const usePlannerStore = defineStore('planner', () => {
   const data = ref<Record<string, Shift[]>>({})
   let nextId = 1
@@ -37,13 +36,10 @@ export const usePlannerStore = defineStore('planner', () => {
   return { data, getShifts, addShift, removeShift }
 })
 
-// ─── Date helpers ────────────────────────────────────────────────────────────
-
 export function toDateKey(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-/** Returns the Monday of the week at `offset` weeks from today */
 export function weekStart(offset: number): Date {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
@@ -51,7 +47,6 @@ export function weekStart(offset: number): Date {
   return d
 }
 
-/** Returns the 7 Date objects for the week at `offset` */
 export function weekDates(offset: number): Date[] {
   const mon = weekStart(offset)
   return Array.from({ length: 7 }, (_, i) => {
@@ -61,7 +56,6 @@ export function weekDates(offset: number): Date[] {
   })
 }
 
-/** Returns all Date objects in the month at `offset` months from today */
 export function monthDates(offset: number): Date[] {
   const now = new Date()
   const year  = now.getFullYear()
