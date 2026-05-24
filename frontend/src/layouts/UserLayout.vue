@@ -20,13 +20,13 @@
         <svg class="ni" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="#888" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
         Permessi
       </RouterLink>
-      <RouterLink class="nav-item" to="/user/profilo">
-        <svg class="ni" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="#888" stroke-width="1.2"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
-        Profilo
-      </RouterLink>
       <RouterLink class="nav-item" to="/user/chat">
         <svg class="ni" viewBox="0 0 16 16" fill="none"><path d="M2 4h12v7a2 2 0 01-2 2H4a2 2 0 01-2-2V4z" stroke="#888" stroke-width="1.2"/><path d="M2 4l6 5 6-5" stroke="#888" stroke-width="1.2"/></svg>
         Chat
+      </RouterLink>
+      <RouterLink class="nav-item" to="/user/profilo">
+        <svg class="ni" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="#888" stroke-width="1.2"/><path d="M2 14c0-3 2.5-5 6-5s6 2 6 5" stroke="#888" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Profilo
       </RouterLink>
 
       <div class="user-chip">
