@@ -12,14 +12,35 @@
             <option>Altro</option>
           </select>
         </div>
+        <div v-if="form.tipo === 'Permesso'" class="fg">
+          <label>Durata</label>
+          <select v-model="form.durata">
+            <option>Giornaliero</option>
+            <option>Orario</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
         <div class="fg">
-          <label>Dal</label>
+          <label>{{ form.tipo === 'Permesso' && form.durata === 'Orario' ? 'Giorno' : 'Dal' }}</label>
           <input type="date" v-model="form.dal" />
         </div>
-        <div class="fg">
-          <label>Al</label>
-          <input type="date" v-model="form.al" />
-        </div>
+        <template v-if="!(form.tipo === 'Permesso' && form.durata === 'Orario')">
+          <div class="fg">
+            <label>Al</label>
+            <input type="date" v-model="form.al" />
+          </div>
+        </template>
+        <template v-if="form.tipo === 'Permesso' && form.durata === 'Orario'">
+          <div class="fg">
+            <label>Ora inizio</label>
+            <input type="time" v-model="form.oraInizio" />
+          </div>
+          <div class="fg">
+            <label>Ora fine</label>
+            <input type="time" v-model="form.oraFine" />
+          </div>
+        </template>
       </div>
       <div class="fg">
         <label>Note (opzionale)</label>
@@ -50,13 +71,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const form = ref({ tipo: 'Ferie', dal: '', al: '', note: '', certificato: '' })
+const form = ref({ tipo: 'Ferie', dal: '', al: '', note: '', certificato: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' })
 const richieste = ref<{ tipo: string; dal: string; al: string; stato: string }[]>([])
 
 function invia() {
-  if (!form.value.dal || !form.value.al) return
+  if (!form.value.dal) return
+  if (form.value.tipo === 'Permesso' && form.value.durata === 'Orario') {
+    if (!form.value.oraInizio || !form.value.oraFine) return
+  } else {
+    if (!form.value.al) return
+  }
   richieste.value.unshift({ tipo: form.value.tipo, dal: form.value.dal, al: form.value.al, stato: 'in attesa' })
-  form.value = { tipo: 'Ferie', dal: '', al: '', note: '', certificato: '' }
+  form.value = { tipo: 'Ferie', dal: '', al: '', note: '', certificato: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' }
 }
 
 const fileInput = ref<HTMLInputElement | null>(null)

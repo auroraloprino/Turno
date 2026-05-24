@@ -28,6 +28,7 @@ const router = createRouter({
         { path: 'planner',    component: () => import('@/views/user/PlannerView.vue') },
         { path: 'permessi',   component: () => import('@/views/user/PermessiView.vue') },
         { path: 'chat',       component: () => import('@/views/user/ChatView.vue') },
+        { path: 'profilo',    component: () => import('@/views/user/ProfiloView.vue') },
       ]
     }
   ]
