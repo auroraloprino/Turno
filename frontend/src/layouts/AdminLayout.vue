@@ -45,6 +45,7 @@
       <div class="topbar">
         <h1>{{ pageTitle }}</h1>
         <span class="badge">Admin</span>
+        <button style="margin-left:auto;background:none;border:none;color:var(--coral-dark);cursor:pointer;font-size:12px" @click="logout">Esci</button>
       </div>
       <div class="content">
         <RouterView />
@@ -55,9 +56,18 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const route = useRoute()
+const route  = useRoute()
+const router = useRouter()
+const auth   = useAuthStore()
+
+function logout() {
+  auth.logout()
+  router.push('/login')
+}
+
 const pageTitle = computed(() => {
   const map: Record<string, string> = {
     '/admin/dashboard':   'Dashboard',

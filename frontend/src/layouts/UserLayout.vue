@@ -30,18 +30,19 @@
       </RouterLink>
 
       <div class="user-chip">
-        <div class="av">MR</div>
+        <div class="av">{{ initials }}</div>
         <div>
-          <div class="chip-name">Mario Rossi</div>
-          <div class="chip-role">L1</div>
+          <div class="chip-name">{{ auth.user?.name }}</div>
+          <div class="chip-role">{{ auth.user?.email }}</div>
         </div>
       </div>
+      <button class="nav-item" style="margin-top:auto;color:var(--coral-dark)" @click="logout">Esci</button>
     </aside>
 
     <div class="main">
       <div class="topbar">
         <h1>{{ pageTitle }}</h1>
-        <span class="badge">L1</span>
+        <span class="badge">Utente</span>
       </div>
       <div class="content">
         <RouterView />
@@ -52,9 +53,22 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const route = useRoute()
+const route  = useRoute()
+const router = useRouter()
+const auth   = useAuthStore()
+
+const initials = computed(() =>
+  auth.user?.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() ?? '?'
+)
+
+function logout() {
+  auth.logout()
+  router.push('/login')
+}
+
 const pageTitle = computed(() => {
   const map: Record<string, string> = {
     '/user/timbratura': 'Timbratura',
