@@ -5,7 +5,6 @@ target/
 *.ear
 .mvn/
 !.mvn/wrapper/maven-wrapper.jar
-
 backend/src/main/resources/application-local.yml
 backend/src/main/resources/application-local.properties
 
@@ -13,6 +12,9 @@ frontend/node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
+frontend/.env.*.local
+
+docker-compose.override.yml
 
 .idea/
 *.iml
@@ -23,5 +25,5 @@ frontend/.env.local
 .DS_Store
 Thumbs.db
 
-docker-compose.yml
-docker-compose.override.yml
+*.log
+logs/
