@@ -1,0 +1,49 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: turno-postgres
+    environment:
+      POSTGRES_DB: turno
+      POSTGRES_USER: turno
+      POSTGRES_PASSWORD: turno
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: turno-kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.6.0
+    container_name: turno-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  minio:
+    image: minio/minio:latest
+    container_name: turno-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: turno
+      MINIO_ROOT_PASSWORD: turno123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+volumes:
+  postgres_data:
+  minio_data:
