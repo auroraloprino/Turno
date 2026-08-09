@@ -58,8 +58,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { usePlannerStore, DAYS, toDateKey, weekDates, monthDates, weekLabel, monthLabel } from '@/stores/planner'
+import { useAuthStore } from '@/stores/auth'
 
-const ME_ID = 1
+const ME_ID = useAuthStore().user?.id ?? -1
 
 const store  = usePlannerStore()
 const view   = ref<'week' | 'month'>('week')
