@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/turno
+    username: turno
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration-ms: 86400000
+
+app:
+  owner:
+    email: ${OWNER_EMAIL}
+    password: ${OWNER_PASSWORD}
