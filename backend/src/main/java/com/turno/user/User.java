@@ -70,28 +70,28 @@ public class User implements UserDetails {
         { return new User(id, name, email, password, role); }
     }
 
-    public Long getId()       
+    public Long getId()
     { return id; }
-    public String getName()   
+    public String getName()
     { return name; }
-    public String getEmail()  
+    public String getEmail()
     { return email; }
-    public Role getRole()     
+    public Role getRole()
     { return role; }
 
     public void setPassword(String password) 
     { this.password = password; }
 
-    @Override public String getPassword()   
+    @Override public String getPassword()
     { return password; }
-    @Override public String getUsername()   
+    @Override public String getUsername()
     { return email; }
     @Override public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
-    @Override public boolean isAccountNonExpired()     
+    @Override public boolean isAccountNonExpired()
     { return true; }
-    @Override public boolean isAccountNonLocked()      
+    @Override public boolean isAccountNonLocked()
     { return true; }
     @Override public boolean isCredentialsNonExpired() 
     { return true; }
