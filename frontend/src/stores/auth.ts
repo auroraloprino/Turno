@@ -1,9 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 
-export type Role = 'admin' | 'user'
+export type Role = 'OWNER' | 'ADMIN' | 'USER'
 
 export interface AuthUser {
+  id: number
+  name: string
+  email: string
+  role: Role
+}
+
+interface LoginResponse {
+  token: string
   id: number
   name: string
   email: string
@@ -18,18 +26,20 @@ export const useAuthStore = defineStore('auth', () => {
   const role            = computed(() => user.value?.role ?? null)
 
   async function login(email: string, password: string): Promise<void> {
-    if (!email || !password) throw new Error('Credenziali mancanti')
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    })
 
-    const mockUser: AuthUser = email.toLowerCase().includes('admin')
-      ? { id: 1, name: 'Admin Turno', email, role: 'admin' }
-      : { id: 2, name: 'Mario Rossi',  email, role: 'user'  }
+    if (!res.ok) throw new Error('Credenziali non valide')
 
-    const mockToken = btoa(`${mockUser.id}:${mockUser.role}:${Date.now()}`)
+    const data: LoginResponse = await res.json()
 
-    token.value = mockToken
-    user.value  = mockUser
-    localStorage.setItem('token', mockToken)
-    localStorage.setItem('user',  JSON.stringify(mockUser))
+    token.value = data.token
+    user.value  = { id: data.id, name: data.name, email: data.email, role: data.role }
+    localStorage.setItem('token', data.token)
+    localStorage.setItem('user',  JSON.stringify(user.value))
   }
 
   function logout(): void {

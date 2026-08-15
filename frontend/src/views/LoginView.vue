@@ -42,7 +42,7 @@ async function login() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push(auth.role === 'admin' ? '/admin' : '/user')
+    router.push(auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin' : '/user')
   } catch {
     error.value = 'Credenziali non valide.'
   } finally {

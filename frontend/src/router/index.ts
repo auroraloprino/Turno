@@ -9,7 +9,7 @@ const router = createRouter({
     {
       path: '/admin',
       component: () => import('@/layouts/AdminLayout.vue'),
-      meta: { requiresAuth: true, role: 'admin' },
+      meta: { requiresAuth: true, role: ['OWNER', 'ADMIN'] },
       children: [
         { path: '', redirect: 'dashboard' },
         { path: 'dashboard',   component: () => import('@/views/admin/DashboardView.vue') },
@@ -24,7 +24,7 @@ const router = createRouter({
     {
       path: '/user',
       component: () => import('@/layouts/UserLayout.vue'),
-      meta: { requiresAuth: true, role: 'user' },
+      meta: { requiresAuth: true, role: ['USER'] },
       children: [
         { path: '', redirect: 'timbratura' },
         { path: 'timbratura', component: () => import('@/views/user/TimbraturaView.vue') },
@@ -41,15 +41,15 @@ router.beforeEach((to) => {
   const auth = useAuthStore()
 
   if (to.meta.public && auth.isAuthenticated) {
-    return auth.role === 'admin' ? '/admin' : '/user'
+    return auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin' : '/user'
   }
 
   if (to.meta.requiresAuth && !auth.isAuthenticated) {
     return '/login'
   }
 
-  if (to.meta.requiresAuth && to.meta.role && to.meta.role !== auth.role) {
-    return auth.role === 'admin' ? '/admin' : '/user'
+  if (to.meta.requiresAuth && to.meta.role && !(to.meta.role as string[]).includes(auth.role!)) {
+    return auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin' : '/user'
   }
 })
 
