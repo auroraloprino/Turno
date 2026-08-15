@@ -22,16 +22,16 @@
       </div>
       <div class="form-row">
         <div class="fg">
-          <label>{{ form.tipo === 'Permesso' && form.durata === 'Orario' ? 'Giorno' : 'Dal' }}</label>
+          <label>{{ oraMode ? 'Giorno' : 'Dal' }}</label>
           <input type="date" v-model="form.dal" />
         </div>
-        <template v-if="!(form.tipo === 'Permesso' && form.durata === 'Orario')">
+        <template v-if="!oraMode">
           <div class="fg">
             <label>Al</label>
             <input type="date" v-model="form.al" />
           </div>
         </template>
-        <template v-if="form.tipo === 'Permesso' && form.durata === 'Orario'">
+        <template v-if="oraMode">
           <div class="fg">
             <label>Ora inizio</label>
             <input type="time" v-model="form.oraInizio" />
@@ -46,19 +46,16 @@
         <label>Note (opzionale)</label>
         <textarea v-model="form.note"></textarea>
       </div>
-      <div v-if="form.tipo === 'Malattia'" class="fg">
-        <label>Certificato medico</label>
-        <div class="file-row">
-          <button class="btn-file" @click="fileInput?.click()">Scegli file</button>
-          <span class="file-name">{{ form.certificato || 'Nessun file selezionato' }}</span>
-        </div>
-        <input ref="fileInput" type="file" accept=".pdf,.jpg,.jpeg,.png" style="display:none" @change="onFile" />
-      </div>
-      <button class="btn-send" @click="invia">Invia richiesta</button>
+      <span v-if="error" class="errore">{{ error }}</span>
+      <button class="btn-send" :disabled="loading" @click="invia">
+        {{ loading ? 'Invio…' : 'Invia richiesta' }}
+      </button>
     </div>
 
     <div class="past-title">Richieste precedenti</div>
-    <div v-for="(p, i) in richieste" :key="i" class="perm-row-past">
+    <div v-if="loadingList" class="empty-state">Caricamento…</div>
+    <div v-else-if="richieste.length === 0" class="empty-state">Nessuna richiesta.</div>
+    <div v-for="p in richieste" :key="p.id" class="perm-row-past">
       <div>
         <span class="perm-tipo">{{ p.tipo }}</span>
         <span class="perm-d">· {{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</span>
@@ -69,27 +66,63 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import { api } from '@/api'
 
-const form = ref({ tipo: 'Ferie', dal: '', al: '', note: '', certificato: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' })
-const richieste = ref<{ tipo: string; dal: string; al: string; stato: string }[]>([])
-
-function invia() {
-  if (!form.value.dal) return
-  if (form.value.tipo === 'Permesso' && form.value.durata === 'Orario') {
-    if (!form.value.oraInizio || !form.value.oraFine) return
-  } else {
-    if (!form.value.al) return
-  }
-  richieste.value.unshift({ tipo: form.value.tipo, dal: form.value.dal, al: form.value.al, stato: 'in attesa' })
-  form.value = { tipo: 'Ferie', dal: '', al: '', note: '', certificato: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' }
+interface PermessoResponse {
+  id: number
+  tipo: string
+  dal: string
+  al: string
+  oraInizio: string | null
+  oraFine: string | null
+  note: string | null
+  stato: string
 }
 
-const fileInput = ref<HTMLInputElement | null>(null)
+const form = ref({ tipo: 'Ferie', dal: '', al: '', note: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' })
+const richieste = ref<PermessoResponse[]>([])
+const error = ref('')
+const loading = ref(false)
+const loadingList = ref(false)
 
-function onFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0]
-  form.value.certificato = file?.name ?? ''
+const oraMode = computed(() => form.value.tipo === 'Permesso' && form.value.durata === 'Orario')
+
+async function fetchMiei() {
+  loadingList.value = true
+  try {
+    richieste.value = await api.get<PermessoResponse[]>('/api/permessi/me')
+  } finally {
+    loadingList.value = false
+  }
+}
+
+async function invia() {
+  error.value = ''
+  if (!form.value.dal) { error.value = 'Inserisci la data.'; return }
+  if (!oraMode.value && !form.value.al) { error.value = 'Inserisci la data di fine.'; return }
+  if (oraMode.value && (!form.value.oraInizio || !form.value.oraFine)) {
+    error.value = 'Inserisci orario inizio e fine.'
+    return
+  }
+  loading.value = true
+  try {
+    const body = {
+      tipo: form.value.tipo,
+      dal: form.value.dal,
+      al: oraMode.value ? form.value.dal : form.value.al,
+      oraInizio: oraMode.value ? form.value.oraInizio : null,
+      oraFine: oraMode.value ? form.value.oraFine : null,
+      note: form.value.note || null,
+    }
+    const created = await api.post<PermessoResponse>('/api/permessi', body)
+    richieste.value.unshift(created)
+    form.value = { tipo: 'Ferie', dal: '', al: '', note: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' }
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Errore durante l\'invio.'
+  } finally {
+    loading.value = false
+  }
 }
 
 function fmt(d: string) {
@@ -99,34 +132,22 @@ function fmt(d: string) {
 }
 
 function statoClass(stato: string) {
-  if (stato === 'approvata') return 'p-ok'
-  if (stato === 'rifiutata') return 'p-no'
+  if (stato === 'APPROVATO') return 'p-ok'
+  if (stato === 'RIFIUTATO') return 'p-no'
   return 'p-pend'
 }
+
+onMounted(fetchMiei)
 </script>
 
 <style scoped>
-.file-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+.empty-state {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 8px 0;
 }
-
-.btn-file {
-  padding: 6px 14px;
+.errore {
   font-size: 12px;
-  background: var(--bg-tertiary);
-  border: 0.5px solid var(--border-md);
-  border-radius: var(--radius-md);
-  color: var(--text-primary);
-  cursor: pointer;
-  font-family: inherit;
-  transition: opacity 0.12s;
-}
-.btn-file:hover { opacity: 0.7; }
-
-.file-name {
-  font-size: 11px;
-  color: var(--text-secondary);
+  color: var(--coral-dark);
 }
 </style>
