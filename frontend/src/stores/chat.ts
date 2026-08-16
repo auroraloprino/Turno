@@ -1,59 +1,90 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { Client } from '@stomp/stompjs'
+import { api } from '@/api'
+import { useAuthStore } from '@/stores/auth'
 
-export type Role = 'admin' | 'user'
-
-export interface User {
+export interface Messaggio {
   id: number
-  name: string
-  role: Role
-}
-
-export interface Message {
-  id: number
+  conversazioneId: number
   senderId: number
   senderName: string
-  text: string
-  time: string
+  testo: string
+  timestamp: string
 }
 
-export interface Conversation {
+export interface Conversazione {
   id: number
-  type: 'group' | 'private'
-  participants: number[]
-  name: string
-  messages: Message[]
-  unread: number
+  tipo: string
+  nome: string
+  partecipanti: number[]
+  messaggi: Messaggio[]
+  nonLetti: number
 }
 
 export const useChatStore = defineStore('chat', () => {
-  const currentUser = ref<User | null>(null)
-  const conversations = ref<Conversation[]>([])
-  let nextMsgId = 1
+  const conversazioni = ref<Conversazione[]>([])
+  const connesso = ref(false)
+  let client: Client | null = null
 
-  function setCurrentUser(user: User) {
-    currentUser.value = user
+  async function carica() {
+    const data = await api.get<Omit<Conversazione, 'messaggi' | 'nonLetti'>[]>('/api/chat/conversazioni')
+    conversazioni.value = data.map(c => ({ ...c, messaggi: [], nonLetti: 0 }))
   }
 
-  function sendMessage(conversationId: number, text: string) {
-    if (!currentUser.value) return
-    const conv = conversations.value.find(c => c.id === conversationId)
+  async function apri(id: number) {
+    const conv = conversazioni.value.find(c => c.id === id)
     if (!conv) return
-    const now = new Date()
-    const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
-    conv.messages.push({
-      id: nextMsgId++,
-      senderId: currentUser.value.id,
-      senderName: currentUser.value.name,
-      text,
-      time,
+    if (conv.messaggi.length === 0) {
+      conv.messaggi = await api.get<Messaggio[]>(`/api/chat/conversazioni/${id}/messaggi`)
+    }
+    conv.nonLetti = 0
+  }
+
+  async function invia(conversazioneId: number, testo: string) {
+    await api.post(`/api/chat/conversazioni/${conversazioneId}/messaggi`, { testo })
+  }
+
+  function connetti() {
+    const auth = useAuthStore()
+    if (!auth.token || client) return
+
+    client = new Client({
+      brokerURL: `ws://localhost:8080/ws/websocket`,
+      connectHeaders: { Authorization: `Bearer ${auth.token}` },
+      onConnect: () => {
+        connesso.value = true
+        conversazioni.value.forEach(c => {
+          client!.subscribe(`/topic/conversazione/${c.id}`, frame => {
+            const msg: Messaggio = JSON.parse(frame.body)
+            const conv = conversazioni.value.find(x => x.id === msg.conversazioneId)
+            if (!conv) return
+            conv.messaggi.push(msg)
+            conv.nonLetti++
+          })
+        })
+      },
+      onDisconnect: () => { connesso.value = false },
+    })
+    client.activate()
+  }
+
+  function disconnetti() {
+    client?.deactivate()
+    client = null
+    connesso.value = false
+  }
+
+  function sottoscrivi(conversazioneId: number) {
+    if (!client?.connected) return
+    client.subscribe(`/topic/conversazione/${conversazioneId}`, frame => {
+      const msg: Messaggio = JSON.parse(frame.body)
+      const conv = conversazioni.value.find(x => x.id === msg.conversazioneId)
+      if (!conv) return
+      conv.messaggi.push(msg)
+      conv.nonLetti++
     })
   }
 
-  function markRead(conversationId: number) {
-    const conv = conversations.value.find(c => c.id === conversationId)
-    if (conv) conv.unread = 0
-  }
-
-  return { currentUser, conversations, setCurrentUser, sendMessage, markRead }
+  return { conversazioni, connesso, carica, apri, invia, connetti, disconnetti, sottoscrivi }
 })
