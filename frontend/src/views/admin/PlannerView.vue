@@ -46,8 +46,8 @@
         <div v-for="(group, start) in groupedShifts" :key="start" class="modal-group">
           <div class="modal-group-label">{{ start }}</div>
           <div v-for="shift in group" :key="shift.id" class="modal-row">
-            <span class="modal-name">{{ shift.name }}</span>
-            <span class="modal-time">{{ shift.start }}–{{ shift.end }}</span>
+            <span class="modal-name">{{ shift.userName }}</span>
+            <span class="modal-time">{{ shift.inizio }}–{{ shift.fine }}</span>
           </div>
         </div>
         <div v-if="!Object.keys(groupedShifts).length" class="modal-empty">Nessun turno</div>
@@ -57,19 +57,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePlannerStore, DAYS, toDateKey, weekDates, monthDates, weekLabel, monthLabel } from '@/stores/planner'
 import type { Shift } from '@/stores/planner'
 import DayCell from '@/components/DayCell.vue'
 
-const store   = usePlannerStore()
-const view    = ref<'week' | 'month'>('week')
-const offset  = ref(0)
+const store = usePlannerStore()
+const view = ref<'week' | 'month'>('week')
+const offset = ref(0)
 
-const currentWeekDates  = computed(() => weekDates(offset.value))
+const currentWeekDates = computed(() => weekDates(offset.value))
 const currentMonthDates = computed(() => monthDates(offset.value))
-const label             = computed(() => view.value === 'week' ? weekLabel(offset.value) : monthLabel(offset.value))
-const leadingBlanks     = computed(() => (currentMonthDates.value[0].getDay() + 6) % 7)
+const label = computed(() => view.value === 'week' ? weekLabel(offset.value) : monthLabel(offset.value))
+const leadingBlanks = computed(() => (currentMonthDates.value[0].getDay() + 6) % 7)
 
 const modalDate = ref<Date | null>(null)
 
@@ -80,12 +80,29 @@ function openModal(date: Date) {
 const groupedShifts = computed(() => {
   if (!modalDate.value) return {}
   const shifts = [...store.getShifts(toDateKey(modalDate.value))]
-    .sort((a, b) => a.start.localeCompare(b.start) || a.end.localeCompare(b.end))
+    .sort((a, b) => a.inizio.localeCompare(b.inizio))
   return shifts.reduce<Record<string, Shift[]>>((acc, s) => {
-    ;(acc[s.start] ??= []).push(s)
+    ;(acc[s.inizio] ??= []).push(s)
     return acc
   }, {})
 })
+
+function rangeForView(): [string, string] {
+  if (view.value === 'week') {
+    const dates = weekDates(offset.value)
+    return [toDateKey(dates[0]), toDateKey(dates[6])]
+  }
+  const dates = monthDates(offset.value)
+  return [toDateKey(dates[0]), toDateKey(dates[dates.length - 1])]
+}
+
+async function reload() {
+  const [dal, al] = rangeForView()
+  await store.carica(dal, al)
+}
+
+watch([offset, view], reload)
+onMounted(reload)
 </script>
 
 <style scoped>

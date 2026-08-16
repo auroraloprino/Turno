@@ -3,15 +3,15 @@
     <div class="card-title">Informazioni account</div>
     <div class="info-row">
       <span class="info-label">Nome</span>
-      <span class="info-val">{{ user.name }}</span>
+      <span class="info-val">{{ auth.user?.name }}</span>
     </div>
     <div class="info-row">
       <span class="info-label">Email</span>
-      <span class="info-val">{{ user.email }}</span>
+      <span class="info-val">{{ auth.user?.email }}</span>
     </div>
     <div class="info-row">
       <span class="info-label">Ruolo</span>
-      <span class="info-val">{{ user.role }}</span>
+      <span class="info-val">{{ auth.user?.role }}</span>
     </div>
   </div>
 
@@ -31,20 +31,28 @@
         <input type="password" v-model="form.conferma" />
       </div>
       <span v-if="errore" class="errore">{{ errore }}</span>
-      <button class="btn-send" @click="salva">Salva</button>
+      <span v-if="successo" class="successo">Password aggiornata.</span>
+      <button class="btn-send" :disabled="loading" @click="salva">
+        {{ loading ? 'Salvataggio…' : 'Salva' }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+import { api } from '@/api'
 
-const user = ref({ name: '', email: '', role: '' })
+const auth = useAuthStore()
 const form = ref({ vecchia: '', nuova: '', conferma: '' })
 const errore = ref('')
+const successo = ref(false)
+const loading = ref(false)
 
-function salva() {
+async function salva() {
   errore.value = ''
+  successo.value = false
   if (!form.value.vecchia || !form.value.nuova || !form.value.conferma) {
     errore.value = 'Compila tutti i campi.'
     return
@@ -53,7 +61,19 @@ function salva() {
     errore.value = 'Le password non coincidono.'
     return
   }
-  form.value = { vecchia: '', nuova: '', conferma: '' }
+  loading.value = true
+  try {
+    await api.patch(`/api/users/${auth.user?.id}/password`, {
+      currentPassword: form.value.vecchia,
+      newPassword: form.value.nuova,
+    })
+    form.value = { vecchia: '', nuova: '', conferma: '' }
+    successo.value = true
+  } catch (e: unknown) {
+    errore.value = e instanceof Error ? e.message : 'Errore durante il salvataggio.'
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -67,10 +87,7 @@ function salva() {
 }
 .info-row:last-child { border-bottom: none; }
 .info-label { color: var(--text-secondary); width: 80px; flex-shrink: 0; }
-.info-val   { color: var(--text-primary); }
-
-.errore {
-  font-size: 12px;
-  color: var(--coral-dark);
-}
+.info-val { color: var(--text-primary); }
+.errore { font-size: 12px; color: var(--coral-dark); }
+.successo { font-size: 12px; color: #1D9E75; }
 </style>

@@ -1,18 +1,16 @@
 <template>
   <div v-for="shift in store.getShifts(dateKey)" :key="shift.id" class="day-slot">
-    <span class="slot-name">{{ shift.name }}</span>
-    <span class="slot-time">{{ shift.start }}–{{ shift.end }}</span>
-    <button class="slot-remove" @click="store.removeShift(dateKey, shift.id)">×</button>
+    <span class="slot-name">{{ shift.userName }}</span>
+    <span class="slot-time">{{ shift.inizio }}–{{ shift.fine }}</span>
+    <button class="slot-remove" @click="store.removeShift(shift.id)">×</button>
   </div>
 
   <div v-if="adding" class="add-form">
     <select v-model="form.userId">
-      <option v-for="m in members" :key="m.id" :value="m.id">{{ m.name }}</option>
+      <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }}</option>
     </select>
-    <template v-if="!compact">
-      <input type="time" v-model="form.start" />
-      <input type="time" v-model="form.end" />
-    </template>
+    <input type="time" v-model="form.inizio" />
+    <input type="time" v-model="form.fine" />
     <div class="add-form-actions">
       <button class="btn-sm btn-ok" @click="confirm">Ok</button>
       <button class="btn-sm btn-no" @click="adding = false">✕</button>
@@ -24,21 +22,25 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { usePlannerStore, members } from '@/stores/planner'
+import { usePlannerStore } from '@/stores/planner'
+import { api } from '@/api'
 
-const props = defineProps<{ dateKey: string; compact?: boolean }>()
+const props = defineProps<{ dateKey: string }>()
 
-const store  = usePlannerStore()
+const store = usePlannerStore()
 const adding = ref(false)
-const form   = ref({ userId: 0, start: '09:00', end: '17:00' })
+const users = ref<{ id: number; name: string }[]>([])
+const form = ref({ userId: 0, inizio: '09:00', fine: '17:00' })
 
-function open() {
-  form.value = { userId: members[0]?.id ?? 0, start: '09:00', end: '17:00' }
+async function open() {
+  if (users.value.length === 0)
+    users.value = await api.get<{ id: number; name: string; role: string }[]>('/api/users')
+  form.value = { userId: users.value[0]?.id ?? 0, inizio: '09:00', fine: '17:00' }
   adding.value = true
 }
 
-function confirm() {
-  store.addShift(props.dateKey, form.value.userId, form.value.start, form.value.end)
+async function confirm() {
+  await store.addShift(props.dateKey, form.value.userId, form.value.inizio, form.value.fine)
   adding.value = false
 }
 </script>

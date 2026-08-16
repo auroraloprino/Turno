@@ -1,81 +1,75 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { api } from '@/api'
 
 export interface Shift {
   id: number
   userId: number
-  name: string
-  start: string
-  end: string
+  userName: string
+  data: string
+  inizio: string
+  fine: string
 }
 
 export const DAYS = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'] as const
 
-export const members: { id: number; name: string }[] = []
-
 export const usePlannerStore = defineStore('planner', () => {
-  const data = ref<Record<string, Shift[]>>({})
-  let nextId = 1
+  const shifts = ref<Shift[]>([])
 
   function getShifts(dateKey: string): Shift[] {
-    return data.value[dateKey] ?? []
+    return shifts.value.filter(s => s.data === dateKey)
   }
 
-  function addShift(dateKey: string, userId: number, start: string, end: string) {
-    const member = members.find(m => m.id === userId)
-    if (!member) return
-    if (!data.value[dateKey]) data.value[dateKey] = []
-    data.value[dateKey].push({ id: nextId++, userId, name: member.name, start, end })
+  async function carica(dal: string, al: string) {
+    shifts.value = await api.get<Shift[]>(`/api/turni?dal=${dal}&al=${al}`)
   }
 
-  function removeShift(dateKey: string, shiftId: number) {
-    if (!data.value[dateKey]) return
-    data.value[dateKey] = data.value[dateKey].filter(s => s.id !== shiftId)
+  async function addShift(data: string, userId: number, inizio: string, fine: string) {
+    const created = await api.post<Shift>('/api/turni', { userId, data, inizio, fine })
+    shifts.value.push(created)
   }
 
-  return { data, getShifts, addShift, removeShift }
+  async function removeShift(shiftId: number) {
+    await api.delete(`/api/turni/${shiftId}`)
+    shifts.value = shifts.value.filter(s => s.id !== shiftId)
+  }
+
+  return { shifts, getShifts, carica, addShift, removeShift }
 })
 
 export function toDateKey(d: Date): string {
   return d.toISOString().slice(0, 10)
 }
 
-export function weekStart(offset: number): Date {
+export function weekDates(offset: number): Date[] {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
   d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offset * 7)
-  return d
-}
-
-export function weekDates(offset: number): Date[] {
-  const mon = weekStart(offset)
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(mon)
-    d.setDate(mon.getDate() + i)
-    return d
+    const day = new Date(d)
+    day.setDate(d.getDate() + i)
+    return day
   })
 }
 
 export function monthDates(offset: number): Date[] {
   const now = new Date()
-  const year  = now.getFullYear()
-  const month = now.getMonth() + offset
-  const first = new Date(year, month, 1)
-  const last  = new Date(year, month + 1, 0)
+  const first = new Date(now.getFullYear(), now.getMonth() + offset, 1)
+  const last = new Date(now.getFullYear(), now.getMonth() + offset + 1, 0)
   const dates: Date[] = []
   for (let d = new Date(first); d <= last; d.setDate(d.getDate() + 1))
     dates.push(new Date(d))
   return dates
 }
 
-export function monthLabel(offset: number): string {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth() + offset, 1)
-    .toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
-}
-
 export function weekLabel(offset: number): string {
   const dates = weekDates(offset)
   const fmt = (d: Date) => d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
   return `${fmt(dates[0])} – ${fmt(dates[6])}`
+}
+
+export function monthLabel(offset: number): string {
+  const now = new Date()
+  return new Date(now.getFullYear(), now.getMonth() + offset, 1)
+    .toLocaleDateString('it-IT', { month: 'long', year: 'numeric' })
 }

@@ -21,8 +21,8 @@
         class="day-slot"
         :class="{ me: shift.userId === ME_ID }"
       >
-        <span class="slot-name">{{ shift.name }}</span>
-        <span class="slot-time">{{ shift.start }}–{{ shift.end }}</span>
+        <span class="slot-name">{{ shift.userName }}</span>
+        <span class="slot-time">{{ shift.inizio }}–{{ shift.fine }}</span>
       </div>
     </div>
   </div>
@@ -38,7 +38,7 @@
         class="day-slot"
         :class="{ me: shift.userId === ME_ID }"
       >
-        <span class="slot-name">{{ shift.name }}</span>
+        <span class="slot-name">{{ shift.userName }}</span>
       </div>
     </div>
   </div>
@@ -56,20 +56,36 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePlannerStore, DAYS, toDateKey, weekDates, monthDates, weekLabel, monthLabel } from '@/stores/planner'
 import { useAuthStore } from '@/stores/auth'
 
 const ME_ID = useAuthStore().user?.id ?? -1
-
-const store  = usePlannerStore()
-const view   = ref<'week' | 'month'>('week')
+const store = usePlannerStore()
+const view = ref<'week' | 'month'>('week')
 const offset = ref(0)
 
-const currentWeekDates  = computed(() => weekDates(offset.value))
+const currentWeekDates = computed(() => weekDates(offset.value))
 const currentMonthDates = computed(() => monthDates(offset.value))
-const label             = computed(() => view.value === 'week' ? weekLabel(offset.value) : monthLabel(offset.value))
-const leadingBlanks     = computed(() => (currentMonthDates.value[0].getDay() + 6) % 7)
+const label = computed(() => view.value === 'week' ? weekLabel(offset.value) : monthLabel(offset.value))
+const leadingBlanks = computed(() => (currentMonthDates.value[0].getDay() + 6) % 7)
+
+function rangeForView(): [string, string] {
+  if (view.value === 'week') {
+    const dates = weekDates(offset.value)
+    return [toDateKey(dates[0]), toDateKey(dates[6])]
+  }
+  const dates = monthDates(offset.value)
+  return [toDateKey(dates[0]), toDateKey(dates[dates.length - 1])]
+}
+
+async function reload() {
+  const [dal, al] = rangeForView()
+  await store.carica(dal, al)
+}
+
+watch([offset, view], reload)
+onMounted(reload)
 </script>
 
 <style scoped>
