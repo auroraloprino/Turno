@@ -1,5 +1,7 @@
 package com.turno.timbratura;
 
+import com.turno.kafka.TimbraturaAuditEvent;
+import com.turno.kafka.TimbraturaEventProducer;
 import com.turno.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -12,9 +14,11 @@ import java.util.List;
 public class TimbraturaService {
 
     private final TimbraturaRepository repository;
+    private final TimbraturaEventProducer producer;
 
-    public TimbraturaService(TimbraturaRepository repository) {
+    public TimbraturaService(TimbraturaRepository repository, TimbraturaEventProducer producer) {
         this.repository = repository;
+        this.producer = producer;
     }
 
     public TimbraturaResponse timbra(User user) {
@@ -27,7 +31,9 @@ public class TimbraturaService {
         if (ultima.isPresent() && ultima.get().getTipo() == prossimo)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Timbratura già registrata");
 
-        Timbratura t = repository.save(new Timbratura(user, prossimo, Instant.now()));
+        Instant now = Instant.now();
+        Timbratura t = repository.save(new Timbratura(user, prossimo, now));
+        producer.publish(new TimbraturaAuditEvent(user.getId(), prossimo, now));
         return TimbraturaResponse.from(t);
     }
 

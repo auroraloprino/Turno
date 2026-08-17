@@ -42,7 +42,25 @@
     <div class="main">
       <div class="topbar">
         <h1>{{ pageTitle }}</h1>
-        <span class="badge">Utente</span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="position:relative;cursor:pointer" @click="showNotifiche = !showNotifiche">
+            <svg viewBox="0 0 16 16" fill="none" style="width:20px;height:20px">
+              <path d="M8 2a4 4 0 00-4 4v3l-1 1v1h10v-1l-1-1V6a4 4 0 00-4-4z" stroke="#6C63D5" stroke-width="1.2"/>
+              <path d="M6.5 13a1.5 1.5 0 003 0" stroke="#6C63D5" stroke-width="1.2"/>
+            </svg>
+            <span v-if="notifiche.lista.length" style="position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border-radius:50%;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center">
+              {{ notifiche.lista.length }}
+            </span>
+            <div v-if="showNotifiche" style="position:absolute;right:0;top:28px;background:#fff;border:1px solid #eee;border-radius:8px;min-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100">
+              <div v-if="!notifiche.lista.length" style="padding:12px;color:#888;font-size:13px">Nessuna notifica</div>
+              <div v-for="(n, i) in notifiche.lista" :key="i" style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+                <span>{{ n.messaggio }}</span>
+                <span style="cursor:pointer;color:#aaa;margin-left:8px" @click.stop="notifiche.rimuovi(i)">✕</span>
+              </div>
+            </div>
+          </div>
+          <span class="badge">Utente</span>
+        </div>
       </div>
       <div class="content">
         <RouterView />
@@ -52,9 +70,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificheStore } from '@/stores/notifiche'
+
+const notifiche = useNotificheStore()
+const showNotifiche = ref(false)
+onMounted(() => notifiche.connetti())
+onUnmounted(() => notifiche.disconnetti())
 
 const route  = useRoute()
 const router = useRouter()

@@ -1,5 +1,7 @@
 package com.turno.permesso;
 
+import com.turno.kafka.PermessoEventProducer;
+import com.turno.kafka.PermessoStatoEvent;
 import com.turno.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -11,9 +13,11 @@ import java.util.List;
 public class PermessoService {
 
     private final PermessoRepository repository;
+    private final PermessoEventProducer producer;
 
-    public PermessoService(PermessoRepository repository) {
+    public PermessoService(PermessoRepository repository, PermessoEventProducer producer) {
         this.repository = repository;
+        this.producer = producer;
     }
 
     public PermessoResponse crea(PermessoRequest req, User user) {
@@ -47,6 +51,8 @@ public class PermessoService {
         Permesso p = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         p.setStato(stato);
-        return PermessoResponse.from(repository.save(p));
+        PermessoResponse response = PermessoResponse.from(repository.save(p));
+        producer.publish(new PermessoStatoEvent(id, p.getUser().getId(), stato));
+        return response;
     }
 }
