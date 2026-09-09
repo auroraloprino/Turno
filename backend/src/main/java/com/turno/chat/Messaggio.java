@@ -24,6 +24,12 @@ public class Messaggio {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String testo;
 
+    @Column(name = "allegato_url")
+    private String allegatoUrl;
+
+    @Column(name = "allegato_nome")
+    private String allegatoNome;
+
     @Column(nullable = false)
     private Instant timestamp;
 
@@ -40,5 +46,9 @@ public class Messaggio {
     public Conversazione getConversazione() { return conversazione; }
     public User getSender() { return sender; }
     public String getTesto() { return testo; }
+    public String getAllegatoUrl() { return allegatoUrl; }
+    public String getAllegatoNome() { return allegatoNome; }
     public Instant getTimestamp() { return timestamp; }
+    public void setAllegatoUrl(String allegatoUrl) { this.allegatoUrl = allegatoUrl; }
+    public void setAllegatoNome(String allegatoNome) { this.allegatoNome = allegatoNome; }
 }

@@ -11,6 +11,8 @@ public class ChatDto {
             Long senderId,
             String senderName,
             String testo,
+            String allegatoUrl,
+            String allegatoNome,
             Instant timestamp
     ) {
         public static MessaggioResponse from(Messaggio m) {
@@ -20,6 +22,8 @@ public class ChatDto {
                     m.getSender().getId(),
                     m.getSender().getName(),
                     m.getTesto(),
+                    m.getAllegatoUrl(),
+                    m.getAllegatoNome(),
                     m.getTimestamp()
             );
         }

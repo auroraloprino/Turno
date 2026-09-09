@@ -5,10 +5,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -40,6 +42,16 @@ public class ChatController {
             @Valid @RequestBody ChatDto.InviaMessaggioRequest request,
             @AuthenticationPrincipal User user) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.invia(id, request.testo(), user));
+    }
+
+    @PostMapping(value = "/{id}/messaggi/allegato", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ChatDto.MessaggioResponse> inviaAllegato(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "") String testo,
+            @RequestParam("file") MultipartFile file,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.inviaConAllegato(id, testo, file, user));
     }
 
     @PostMapping("/conversazioni/gruppo")
