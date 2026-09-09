@@ -36,7 +36,6 @@
           <div class="chip-role">{{ auth.user?.email }}</div>
         </div>
       </div>
-      <button class="nav-item" style="margin-top:auto;color:var(--coral-dark)" @click="logout">Esci</button>
     </aside>
 
     <div class="main">
@@ -51,15 +50,16 @@
             <span v-if="notifiche.lista.length" style="position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border-radius:50%;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center">
               {{ notifiche.lista.length }}
             </span>
-            <div v-if="showNotifiche" style="position:absolute;right:0;top:28px;background:#fff;border:1px solid #eee;border-radius:8px;min-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100">
-              <div v-if="!notifiche.lista.length" style="padding:12px;color:#888;font-size:13px">Nessuna notifica</div>
-              <div v-for="(n, i) in notifiche.lista" :key="i" style="padding:10px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;display:flex;justify-content:space-between;align-items:center">
+            <div v-if="showNotifiche" style="position:absolute;right:0;top:28px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:8px;min-width:240px;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:100">
+              <div v-if="!notifiche.lista.length" style="padding:12px;color:var(--text-secondary);font-size:13px">Nessuna notifica</div>
+              <div v-for="(n, i) in notifiche.lista" :key="i" style="padding:10px 12px;border-bottom:0.5px solid var(--border);font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--text-primary)">
                 <span>{{ n.messaggio }}</span>
-                <span style="cursor:pointer;color:#aaa;margin-left:8px" @click.stop="notifiche.rimuovi(i)">✕</span>
+                <span style="cursor:pointer;color:var(--text-tertiary);margin-left:8px" @click.stop="notifiche.rimuovi(i)">✕</span>
               </div>
             </div>
           </div>
           <span class="badge">Utente</span>
+          <button style="background:none;border:none;color:var(--coral-dark);cursor:pointer;font-size:12px;padding:0" @click="logout">Esci</button>
         </div>
       </div>
       <div class="content">

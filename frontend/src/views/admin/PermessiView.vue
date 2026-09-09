@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { api } from '@/api'
 
 interface PermessoResponse {
@@ -51,21 +51,6 @@ const inAttesa = ref<PermessoResponse[]>([])
 const tutti = ref<PermessoResponse[]>([])
 const loadingAttesa = ref(false)
 const loadingTutti = ref(false)
-
-async function fetchAll() {
-  loadingAttesa.value = true
-  loadingTutti.value = true
-  try {
-    inAttesa.value = await api.get<PermessoResponse[]>('/api/permessi/in-attesa')
-  } finally {
-    loadingAttesa.value = false
-  }
-  try {
-    tutti.value = await api.get<PermessoResponse[]>('/api/permessi')
-  } finally {
-    loadingTutti.value = false
-  }
-}
 
 async function aggiorna(id: number, stato: string) {
   const updated = await api.patch<PermessoResponse>(`/api/permessi/${id}/stato?stato=${stato}`, {})
@@ -86,7 +71,31 @@ function statoClass(stato: string) {
   return 'p-pend'
 }
 
-onMounted(fetchAll)
+let timer: ReturnType<typeof setInterval>
+
+async function fetchAll() {
+  loadingAttesa.value = true
+  loadingTutti.value = true
+  try {
+    inAttesa.value = await api.get<PermessoResponse[]>('/api/permessi/in-attesa')
+  } finally {
+    loadingAttesa.value = false
+  }
+  try {
+    tutti.value = await api.get<PermessoResponse[]>('/api/permessi')
+  } finally {
+    loadingTutti.value = false
+  }
+}
+
+onMounted(() => {
+  fetchAll()
+  timer = setInterval(() => {
+    api.get<PermessoResponse[]>('/api/permessi/in-attesa').then(v => { inAttesa.value = v })
+  }, 20000)
+})
+
+onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>

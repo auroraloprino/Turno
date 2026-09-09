@@ -49,4 +49,19 @@ public class UserService {
         caller.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(caller);
     }
+
+    public void delete(Long targetId, User caller) {
+        User target = userRepository.findById(targetId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        // ADMIN can only delete USER
+        if (caller.getRole() == Role.ADMIN && target.getRole() != Role.USER)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+
+        // nobody can delete themselves
+        if (caller.getId().equals(targetId))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+
+        userRepository.delete(target);
+    }
 }

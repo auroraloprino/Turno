@@ -17,7 +17,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { api } from '@/api'
 
 interface TimbraturaResponse {
@@ -45,6 +45,8 @@ function fmt(ts: string) {
   })
 }
 
+let timer: ReturnType<typeof setInterval>
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -52,7 +54,12 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  timer = setInterval(async () => {
+    timbrature.value = await api.get<TimbraturaResponse[]>('/api/timbrature')
+  }, 30000)
 })
+
+onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <ChatPanel :adminControls="true" />
+  <ChatPanel />
 </template>
 
 <script setup lang="ts">

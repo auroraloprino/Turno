@@ -23,7 +23,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasRole('OWNER')")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<List<UserResponse>> list() {
         return ResponseEntity.ok(userService.findAll());
     }
@@ -40,6 +40,15 @@ public class UserController {
             @Valid @RequestBody ChangePasswordRequest request,
             @AuthenticationPrincipal User caller) {
         userService.changePassword(id, request, caller);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
+    public ResponseEntity<Void> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User caller) {
+        userService.delete(id, caller);
         return ResponseEntity.noContent().build();
     }
 }
