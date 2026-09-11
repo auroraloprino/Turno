@@ -11,14 +11,17 @@ const router = createRouter({
       component: () => import('@/layouts/AdminLayout.vue'),
       meta: { requiresAuth: true, role: ['OWNER', 'ADMIN'] },
       children: [
-        { path: '', redirect: 'dashboard' },
+        { path: '', redirect: '/admin/dashboard' },
         { path: 'dashboard',   component: () => import('@/views/admin/DashboardView.vue') },
-        { path: 'utenti',      component: () => import('@/views/admin/UtentiView.vue') },
-        { path: 'planner',     component: () => import('@/views/admin/PlannerView.vue') },
-        { path: 'timbrature',  component: () => import('@/views/admin/TimbratureView.vue') },
+        { path: 'utenti',      component: () => import('@/views/admin/UtentiView.vue'),      meta: { role: ['OWNER'] } },
+        { path: 'planner',     component: () => import('@/views/admin/PlannerView.vue'),     meta: { role: ['OWNER'] } },
+        { path: 'timbrature',  component: () => import('@/views/admin/TimbratureView.vue'),  meta: { role: ['OWNER'] } },
         { path: 'permessi',    component: () => import('@/views/admin/PermessiView.vue') },
         { path: 'chat',        component: () => import('@/views/admin/ChatView.vue') },
         { path: 'credenziali', component: () => import('@/views/admin/CredenzialiView.vue') },
+        { path: 'timbratura',  component: () => import('@/views/user/TimbraturaView.vue') },
+        { path: 'miei-permessi', component: () => import('@/views/user/PermessiView.vue') },
+        { path: 'membri',      component: () => import('@/views/admin/UtentiView.vue') },
       ],
     },
     {
@@ -26,7 +29,7 @@ const router = createRouter({
       component: () => import('@/layouts/UserLayout.vue'),
       meta: { requiresAuth: true, role: ['USER'] },
       children: [
-        { path: '', redirect: 'timbratura' },
+        { path: '', redirect: '/user/timbratura' },
         { path: 'timbratura', component: () => import('@/views/user/TimbraturaView.vue') },
         { path: 'planner',    component: () => import('@/views/user/PlannerView.vue') },
         { path: 'permessi',   component: () => import('@/views/user/PermessiView.vue') },
@@ -50,6 +53,11 @@ router.beforeEach((to) => {
 
   if (to.meta.requiresAuth && to.meta.role && !(to.meta.role as string[]).includes(auth.role!)) {
     return auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin' : '/user'
+  }
+
+  // block ADMIN from OWNER-only child routes
+  if (to.meta.role && !(to.meta.role as string[]).includes(auth.role!)) {
+    return '/admin/permessi'
   }
 })
 

@@ -30,3 +30,9 @@ app:
   owner:
     email: ${OWNER_EMAIL}
     password: ${OWNER_PASSWORD}
+
+minio:
+  url: http://localhost:9000
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: turno-docs

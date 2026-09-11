@@ -1,0 +1,43 @@
+package com.turno.config;
+
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class MinioConfig {
+
+    @Value("${minio.url}")
+    private String url;
+    @Value("${minio.access-key}")
+    private String accessKey;
+    @Value("${minio.secret-key}")
+    private String secretKey;
+    @Value("${minio.bucket}")
+    private String bucket;
+
+    @Bean
+    public MinioClient minioClient() {
+        return MinioClient.builder()
+                .endpoint(url)
+                .credentials(accessKey, secretKey)
+                .build();
+    }
+
+    @Bean
+    public ApplicationRunner minioBucketInit(MinioClient minioClient) {
+        return (ApplicationArguments args) -> {
+            try {
+                boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
+                if (!exists) minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            } catch (io.minio.errors.MinioException | java.io.IOException | java.security.InvalidKeyException | java.security.NoSuchAlgorithmException e) {
+                System.err.println("[MinIO] bucket init failed: " + e.getMessage());
+            }
+        };
+    }
+}

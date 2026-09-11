@@ -72,7 +72,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { api } from '@/api'
 import { toDateKey, weekDates } from '@/stores/planner'
 
@@ -105,6 +105,18 @@ async function aggiorna(id: number, stato: string) {
   permessiAttesa.value = permessiAttesa.value.filter(p => p.id !== id)
 }
 
+let timer: ReturnType<typeof setInterval>
+
+async function fetchLive() {
+  const oggi = toDateKey(new Date())
+  const [t, p] = await Promise.all([
+    api.get<TimbraturaResponse[]>('/api/timbrature'),
+    api.get<PermessoResponse[]>('/api/permessi/in-attesa'),
+  ])
+  timbratureOggi.value = t.filter(x => x.timestamp.startsWith(oggi))
+  permessiAttesa.value = p
+}
+
 onMounted(async () => {
   const oggi = toDateKey(new Date())
   const dates = weekDates(0)
@@ -122,7 +134,11 @@ onMounted(async () => {
   timbratureOggi.value = t.filter(x => x.timestamp.startsWith(oggi))
   permessiAttesa.value = p
   turniSettimana.value = turni
+
+  timer = setInterval(fetchLive, 30000)
 })
+
+onUnmounted(() => clearInterval(timer))
 </script>
 
 <style scoped>

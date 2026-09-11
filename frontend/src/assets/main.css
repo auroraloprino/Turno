@@ -870,24 +870,25 @@ body {
   font-size: 11px;
   padding: 4px 12px;
   border-radius: var(--radius-md);
-  border: 0.5px solid;
+  border: none;
   cursor: pointer;
-  background: transparent;
+  background: var(--purple);
+  color: white;
   transition: opacity 0.12s;
   font-family: inherit;
 }
 
 .btn-sm:hover {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .btn-ok {
-  border-color: #3a8c6e;
-  color: #6ecfb0;
+  background: var(--purple);
+  color: white;
 }
 
 .btn-no {
-  border-color: #8c4a3a;
+  background: #7a3a2a;
   color: #e8836a;
 }
 
