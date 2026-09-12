@@ -3,12 +3,14 @@ package com.turno.turno;
 import com.turno.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class TurnoService {
 
     private final TurnoRepository turnoRepository;
@@ -29,12 +31,14 @@ public class TurnoService {
                 .stream().map(TurnoResponse::from).toList();
     }
 
+    @Transactional
     public TurnoResponse crea(TurnoRequest req) {
         var user = userRepository.findById(req.userId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utente non trovato"));
         return TurnoResponse.from(turnoRepository.save(new Turno(user, req.data(), req.inizio(), req.fine())));
     }
 
+    @Transactional
     public void elimina(Long id) {
         if (!turnoRepository.existsById(id))
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
