@@ -5,12 +5,14 @@ import com.turno.kafka.TimbraturaEventProducer;
 import com.turno.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class TimbraturaService {
 
     private final TimbraturaRepository repository;
@@ -21,6 +23,7 @@ public class TimbraturaService {
         this.producer = producer;
     }
 
+    @Transactional
     public TimbraturaResponse timbra(User user) {
         var ultima = repository.findTopByUserIdOrderByTimestampDesc(user.getId());
 
