@@ -13,7 +13,9 @@ public class ChatDto {
             String testo,
             String allegatoUrl,
             String allegatoNome,
-            Instant timestamp
+            Instant timestamp,
+            boolean modificato,
+            boolean eliminato
     ) {
         public static MessaggioResponse from(Messaggio m) {
             return new MessaggioResponse(
@@ -24,7 +26,9 @@ public class ChatDto {
                     m.getTesto(),
                     m.getAllegatoUrl(),
                     m.getAllegatoNome(),
-                    m.getTimestamp()
+                    m.getTimestamp(),
+                    m.isModificato(),
+                    m.isEliminato()
             );
         }
     }
@@ -46,4 +50,5 @@ public class ChatDto {
     }
 
     public record InviaMessaggioRequest(String testo) {}
+    public record ModificaMessaggioRequest(String testo) {}
 }
