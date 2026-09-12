@@ -1,5 +1,5 @@
 <template>
-  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;height:500px">
+  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
       Chat
       <button class="btn-sm btn-ok" @click="showNuova = !showNuova">+ Nuova</button>
