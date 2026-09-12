@@ -1,14 +1,15 @@
 package com.turno.user;
 
-import com.turno.user.dto.ChangePasswordRequest;
-import com.turno.user.dto.CreateUserRequest;
-import com.turno.user.dto.UserResponse;
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
+import com.turno.user.dto.ChangePasswordRequest;
+import com.turno.user.dto.CreateUserRequest;
+import com.turno.user.dto.UserResponse;
 
 @Service
 public class UserService {
@@ -54,11 +55,9 @@ public class UserService {
         User target = userRepository.findById(targetId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        // ADMIN can only delete USER
         if (caller.getRole() == Role.ADMIN && target.getRole() != Role.USER)
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 
-        // nobody can delete themselves
         if (caller.getId().equals(targetId))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 
