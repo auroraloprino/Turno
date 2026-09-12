@@ -13,6 +13,8 @@ export interface Messaggio {
   allegatoUrl: string | null
   allegatoNome: string | null
   timestamp: string
+  modificato: boolean
+  eliminato: boolean
 }
 
 export interface Conversazione {
@@ -32,35 +34,51 @@ export const useChatStore = defineStore('chat', () => {
 
   async function carica() {
     const data = await api.get<Omit<Conversazione, 'messaggi' | 'nonLetti'>[]>('/api/chat/conversazioni')
-    const existing = new Set(conversazioni.value.map(c => c.id))
-    const nuove = data.filter(c => !existing.has(c.id))
-    conversazioni.value = [
-      ...conversazioni.value,
-      ...nuove.map(c => ({ ...c, messaggi: [], nonLetti: 0 })),
-    ]
-    // subscribe to any newly loaded conversations
-    nuove.forEach(c => sottoscrivi(c.id))
+    // merge: keep existing messaggi/nonLetti, add new ones
+    const existingMap = new Map(conversazioni.value.map(c => [c.id, c]))
+    conversazioni.value = data.map(c => existingMap.get(c.id) ?? { ...c, messaggi: [], nonLetti: 0 })
+    data.forEach(c => _subscribe(c.id))
   }
 
   async function apri(id: number) {
     const conv = conversazioni.value.find(c => c.id === id)
     if (!conv) return
-    if (conv.messaggi.length === 0) {
-      conv.messaggi = await api.get<Messaggio[]>(`/api/chat/conversazioni/${id}/messaggi`)
-    }
+    // always reload to get latest messages
+    conv.messaggi = await api.get<Messaggio[]>(`/api/chat/conversazioni/${id}/messaggi`)
     conv.nonLetti = 0
   }
 
   async function invia(conversazioneId: number, testo: string) {
-    await api.post(`/api/chat/conversazioni/${conversazioneId}/messaggi`, { testo })
+    const msg = await api.post<Messaggio>(`/api/chat/conversazioni/${conversazioneId}/messaggi`, { testo })
+    _upsertMsg(msg)
+  }
+
+  async function modifica(messaggioId: number, testo: string) {
+    const msg = await api.patch<Messaggio>(`/api/chat/messaggi/${messaggioId}`, { testo })
+    _upsertMsg(msg)
+  }
+
+  function _upsertMsg(msg: Messaggio) {
+    const conv = conversazioni.value.find(c => c.id === msg.conversazioneId)
+    if (!conv) return
+    const idx = conv.messaggi.findIndex(m => m.id === msg.id)
+    if (idx >= 0) conv.messaggi[idx] = msg
+    else conv.messaggi.push(msg)
+  }
+
+  async function elimina(messaggioId: number) {
+    await api.delete(`/api/chat/messaggi/${messaggioId}`)
+    // WS broadcast will update in place via upsert
   }
 
   function connetti() {
     const auth = useAuthStore()
     if (!auth.token || client) return
 
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/websocket`
+
     client = new Client({
-      brokerURL: `ws://localhost:8080/ws/websocket`,
+      brokerURL: wsUrl,
       connectHeaders: { Authorization: `Bearer ${auth.token}` },
       onConnect: () => {
         connesso.value = true
@@ -78,10 +96,6 @@ export const useChatStore = defineStore('chat', () => {
     subscribed.clear()
   }
 
-  function sottoscrivi(conversazioneId: number) {
-    _subscribe(conversazioneId)
-  }
-
   function _subscribe(conversazioneId: number) {
     if (!client?.connected || subscribed.has(conversazioneId)) return
     subscribed.add(conversazioneId)
@@ -89,10 +103,17 @@ export const useChatStore = defineStore('chat', () => {
       const msg: Messaggio = JSON.parse(frame.body)
       const conv = conversazioni.value.find(x => x.id === msg.conversazioneId)
       if (!conv) return
-      conv.messaggi.push(msg)
-      conv.nonLetti++
+      const idx = conv.messaggi.findIndex(m => m.id === msg.id)
+      if (msg.eliminato) {
+        if (idx >= 0) conv.messaggi.splice(idx, 1)
+      } else if (idx >= 0) {
+        conv.messaggi[idx] = msg
+      } else {
+        conv.messaggi.push(msg)
+        conv.nonLetti++
+      }
     })
   }
 
-  return { conversazioni, connesso, carica, apri, invia, connetti, disconnetti, sottoscrivi }
+  return { conversazioni, connesso, carica, apri, invia, modifica, elimina, connetti, disconnetti }
 })

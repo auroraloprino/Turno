@@ -16,8 +16,10 @@ export const useNotificheStore = defineStore('notifiche', () => {
     const auth = useAuthStore()
     if (!auth.user || client) return
 
+    const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/websocket`
+
     client = new Client({
-      brokerURL: `ws://localhost:8080/ws/websocket`,
+      brokerURL: wsUrl,
       connectHeaders: { Authorization: `Bearer ${auth.token}` },
       onConnect: () => {
         client!.subscribe(`/topic/notifiche/${auth.user!.id}`, msg => {

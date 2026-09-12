@@ -42,10 +42,13 @@ async function login() {
   loading.value = true
   try {
     await auth.login(email.value, password.value)
-    router.push(auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin' : '/user')
-  } catch {
-    error.value = 'Credenziali non valide.'
-  } finally {
+    const dest = auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin/dashboard' : '/user/timbratura'
+    await router.push(dest)
+    if (router.currentRoute.value.path === '/login') {
+      window.location.href = dest
+    }
+  } catch (e: unknown) {
+    error.value = e instanceof Error ? e.message : 'Errore sconosciuto.'
     loading.value = false
   }
 }
