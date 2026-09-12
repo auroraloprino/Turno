@@ -33,6 +33,12 @@ public class Messaggio {
     @Column(nullable = false)
     private Instant timestamp;
 
+    @Column(nullable = false)
+    private boolean modificato = false;
+
+    @Column(nullable = false)
+    private boolean eliminato = false;
+
     public Messaggio() {}
 
     public Messaggio(Conversazione conversazione, User sender, String testo, Instant timestamp) {
@@ -49,6 +55,11 @@ public class Messaggio {
     public String getAllegatoUrl() { return allegatoUrl; }
     public String getAllegatoNome() { return allegatoNome; }
     public Instant getTimestamp() { return timestamp; }
+    public boolean isModificato() { return modificato; }
+    public boolean isEliminato() { return eliminato; }
+    public void setTesto(String testo) { this.testo = testo; }
+    public void setModificato(boolean modificato) { this.modificato = modificato; }
+    public void setEliminato(boolean eliminato) { this.eliminato = eliminato; }
     public void setAllegatoUrl(String allegatoUrl) { this.allegatoUrl = allegatoUrl; }
     public void setAllegatoNome(String allegatoNome) { this.allegatoNome = allegatoNome; }
 }
