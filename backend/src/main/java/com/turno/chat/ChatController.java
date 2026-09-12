@@ -44,7 +44,7 @@ public class ChatController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.invia(id, request.testo(), user));
     }
 
-    @PostMapping(value = "/{id}/messaggi/allegato", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/conversazioni/{id}/messaggi/allegato", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ChatDto.MessaggioResponse> inviaAllegato(
             @PathVariable Long id,
             @RequestParam(defaultValue = "") String testo,
@@ -52,6 +52,22 @@ public class ChatController {
             @AuthenticationPrincipal User user) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(service.inviaConAllegato(id, testo, file, user));
+    }
+
+    @PatchMapping("/messaggi/{msgId}")
+    public ResponseEntity<ChatDto.MessaggioResponse> modifica(
+            @PathVariable Long msgId,
+            @RequestBody ChatDto.ModificaMessaggioRequest request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(service.modifica(msgId, request.testo(), user.getId()));
+    }
+
+    @DeleteMapping("/messaggi/{msgId}")
+    public ResponseEntity<Void> elimina(
+            @PathVariable Long msgId,
+            @AuthenticationPrincipal User user) {
+        service.elimina(msgId, user.getId());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/conversazioni/gruppo")
