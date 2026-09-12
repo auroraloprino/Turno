@@ -203,6 +203,8 @@ body {
 .content {
   padding: 20px 22px;
   flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .card {
@@ -637,7 +639,9 @@ body {
 .chat-wrap {
   display: flex;
   gap: 12px;
-  height: 420px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .chat-contacts {
