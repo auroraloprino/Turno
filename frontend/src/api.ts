@@ -12,6 +12,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   })
 
+  if (res.status === 401) {
+    if (window.location.pathname !== '/login') {
+      auth.logout()
+      window.location.href = '/login'
+    }
+    throw new Error('Sessione scaduta')
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.message ?? `HTTP ${res.status}`)
