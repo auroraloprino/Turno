@@ -32,6 +32,7 @@ public class PermessoService {
         p.setOraInizio(req.oraInizio());
         p.setOraFine(req.oraFine());
         p.setNote(req.note());
+        p.setCertificatoUrl(req.certificatoUrl());
         return PermessoResponse.from(repository.save(p));
     }
 
