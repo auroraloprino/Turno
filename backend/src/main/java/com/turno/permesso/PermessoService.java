@@ -5,11 +5,13 @@ import com.turno.kafka.PermessoStatoEvent;
 import com.turno.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class PermessoService {
 
     private final PermessoRepository repository;
@@ -20,6 +22,7 @@ public class PermessoService {
         this.producer = producer;
     }
 
+    @Transactional
     public PermessoResponse crea(PermessoRequest req, User user) {
         Permesso p = new Permesso();
         p.setUser(user);
@@ -47,6 +50,7 @@ public class PermessoService {
                 .stream().map(PermessoResponse::from).toList();
     }
 
+    @Transactional
     public PermessoResponse aggiorna(Long id, StatoPermesso stato) {
         Permesso p = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
