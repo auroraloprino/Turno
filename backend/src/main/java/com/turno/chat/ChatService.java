@@ -46,7 +46,7 @@ public class ChatService {
 
     public List<ChatDto.ConversazioneResponse> conversazioni(Long userId) {
         return convRepo.findByPartecipanteId(userId)
-                .stream().map(ChatDto.ConversazioneResponse::from).toList();
+                .stream().map(c -> ChatDto.ConversazioneResponse.from(c, userId)).toList();
     }
 
     public List<ChatDto.MessaggioResponse> messaggi(Long conversazioneId, Long userId) {

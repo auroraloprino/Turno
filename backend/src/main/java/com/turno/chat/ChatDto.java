@@ -47,6 +47,23 @@ public class ChatDto {
                     c.getPartecipanti().stream().map(u -> u.getId()).toList()
             );
         }
+
+        public static ConversazioneResponse from(Conversazione c, Long viewerId) {
+            String nome = c.getNome();
+            if (c.getTipo().equals("private")) {
+                nome = c.getPartecipanti().stream()
+                        .filter(u -> !u.getId().equals(viewerId))
+                        .findFirst()
+                        .map(com.turno.user.User::getName)
+                        .orElse(c.getNome());
+            }
+            return new ConversazioneResponse(
+                    c.getId(),
+                    c.getTipo(),
+                    nome,
+                    c.getPartecipanti().stream().map(u -> u.getId()).toList()
+            );
+        }
     }
 
     public record InviaMessaggioRequest(String testo) {}
