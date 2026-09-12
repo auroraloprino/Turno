@@ -50,7 +50,6 @@ export const useChatStore = defineStore('chat', () => {
   async function apri(id: number) {
     const conv = conversazioni.value.find(c => c.id === id)
     if (!conv) return
-    // always reload to get latest messages
     conv.messaggi = await api.get<Messaggio[]>(`/api/chat/conversazioni/${id}/messaggi`)
     conv.nonLetti = 0
   }
@@ -75,7 +74,6 @@ export const useChatStore = defineStore('chat', () => {
 
   async function elimina(messaggioId: number) {
     await api.delete(`/api/chat/messaggi/${messaggioId}`)
-    // WS broadcast will update in place via upsert
   }
 
   function rimuovi(id: number) {

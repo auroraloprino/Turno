@@ -7,21 +7,34 @@ const router = createRouter({
     { path: '/', redirect: '/login' },
     { path: '/login', component: () => import('@/views/LoginView.vue'), meta: { public: true } },
     {
-      path: '/admin',
-      component: () => import('@/layouts/AdminLayout.vue'),
-      meta: { requiresAuth: true, role: ['OWNER', 'ADMIN'] },
+      path: '/owner',
+      component: () => import('@/layouts/OwnerLayout.vue'),
+      meta: { requiresAuth: true, role: ['OWNER'] },
       children: [
-        { path: '', redirect: '/admin/dashboard' },
+        { path: '', redirect: '/owner/dashboard' },
         { path: 'dashboard',   component: () => import('@/views/admin/DashboardView.vue') },
-        { path: 'utenti',      component: () => import('@/views/admin/UtentiView.vue'),      meta: { role: ['OWNER'] } },
-        { path: 'planner',     component: () => import('@/views/admin/PlannerView.vue'),     meta: { role: ['OWNER'] } },
-        { path: 'timbrature',  component: () => import('@/views/admin/TimbratureView.vue'),  meta: { role: ['OWNER'] } },
+        { path: 'utenti',      component: () => import('@/views/admin/UtentiView.vue') },
+        { path: 'planner',     component: () => import('@/views/admin/PlannerView.vue') },
+        { path: 'timbrature',  component: () => import('@/views/owner/TimbratureView.vue') },
         { path: 'permessi',    component: () => import('@/views/admin/PermessiView.vue') },
         { path: 'chat',        component: () => import('@/views/admin/ChatView.vue') },
         { path: 'credenziali', component: () => import('@/views/admin/CredenzialiView.vue') },
-        { path: 'timbratura',  component: () => import('@/views/user/TimbraturaView.vue') },
+      ],
+    },
+    {
+      path: '/admin',
+      component: () => import('@/layouts/AdminLayout.vue'),
+      meta: { requiresAuth: true, role: ['ADMIN'] },
+      children: [
+        { path: '', redirect: '/admin/dashboard' },
+        { path: 'dashboard',     component: () => import('@/views/admin/DashboardView.vue') },
+        { path: 'membri',        component: () => import('@/views/admin/UtentiView.vue') },
+        { path: 'planner',       component: () => import('@/views/admin/PlannerView.vue') },
+        { path: 'timbrature',    component: () => import('@/views/admin/TimbratureView.vue') },
+        { path: 'permessi',      component: () => import('@/views/admin/PermessiView.vue') },
         { path: 'miei-permessi', component: () => import('@/views/user/PermessiView.vue') },
-        { path: 'membri',      component: () => import('@/views/admin/UtentiView.vue') },
+        { path: 'chat',          component: () => import('@/views/admin/ChatView.vue') },
+        { path: 'credenziali',   component: () => import('@/views/admin/CredenzialiView.vue') },
       ],
     },
     {
@@ -31,10 +44,10 @@ const router = createRouter({
       children: [
         { path: '', redirect: '/user/timbratura' },
         { path: 'timbratura', component: () => import('@/views/user/TimbraturaView.vue') },
-        { path: 'planner', component: () => import('@/views/user/PlannerView.vue') },
-        { path: 'permessi', component: () => import('@/views/user/PermessiView.vue') },
-        { path: 'chat', component: () => import('@/views/user/ChatView.vue') },
-        { path: 'profilo', component: () => import('@/views/user/ProfiloView.vue') },
+        { path: 'planner',    component: () => import('@/views/user/PlannerView.vue') },
+        { path: 'permessi',   component: () => import('@/views/user/PermessiView.vue') },
+        { path: 'chat',       component: () => import('@/views/user/ChatView.vue') },
+        { path: 'profilo',    component: () => import('@/views/user/ProfiloView.vue') },
       ],
     },
   ],
@@ -44,20 +57,17 @@ router.beforeEach((to) => {
   const auth = useAuthStore()
 
   if (to.meta.public && auth.isAuthenticated) {
-    return auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin/dashboard' : '/user/timbratura'
+    if (auth.role === 'OWNER') return '/owner/dashboard'
+    if (auth.role === 'ADMIN') return '/admin/dashboard'
+    return '/user/timbratura'
   }
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
-    return '/login'
-  }
+  if (to.meta.requiresAuth && !auth.isAuthenticated) return '/login'
 
   if (to.meta.requiresAuth && to.meta.role && !(to.meta.role as string[]).includes(auth.role!)) {
-    return auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin/dashboard' : '/user/timbratura'
-  }
-
-  // block ADMIN from OWNER-only child routes
-  if (to.matched.some(r => r.meta.requiresAuth) && to.meta.role && !(to.meta.role as string[]).includes(auth.role!)) {
-    return '/admin/permessi'
+    if (auth.role === 'OWNER') return '/owner/dashboard'
+    if (auth.role === 'ADMIN') return '/admin/dashboard'
+    return '/user/timbratura'
   }
 })
 
