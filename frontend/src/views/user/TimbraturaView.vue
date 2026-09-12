@@ -55,6 +55,7 @@ function tick() {
   clock.value = now.toLocaleTimeString('it-IT')
   date.value  = now.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' })
 }
+tick()
 
 function fmt(ts: string) {
   return new Date(ts).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
