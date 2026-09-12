@@ -12,5 +12,6 @@ public record PermessoRequest(
         @NotNull LocalDate al,
         LocalTime oraInizio,
         LocalTime oraFine,
-        String note
+        String note,
+        String certificatoUrl
 ) {}
