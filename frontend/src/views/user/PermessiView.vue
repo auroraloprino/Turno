@@ -46,6 +46,15 @@
         <label>Note (opzionale)</label>
         <textarea v-model="form.note"></textarea>
       </div>
+      <div v-if="form.tipo === 'Malattia'" class="fg">
+        <label>Certificato medico</label>
+        <label class="file-upload-label">
+          <span>{{ certificatoNome || 'Scegli file…' }}</span>
+          <input type="file" style="display:none" accept=".pdf,image/*" @change="onCertificato" />
+        </label>
+        <span v-if="uploadingCert" style="font-size:11px;color:var(--text-secondary)">Caricamento…</span>
+        <span v-if="uploadErrCert" style="font-size:11px;color:var(--coral-dark)">{{ uploadErrCert }}</span>
+      </div>
       <span v-if="error" class="errore">{{ error }}</span>
       <button class="btn-send" :disabled="loading" @click="invia">
         {{ loading ? 'Invio…' : 'Invia richiesta' }}
@@ -56,9 +65,12 @@
     <div v-if="loadingList" class="empty-state">Caricamento…</div>
     <div v-else-if="richieste.length === 0" class="empty-state">Nessuna richiesta.</div>
     <div v-for="p in richieste" :key="p.id" class="perm-row-past">
-      <div>
+      <div style="flex:1">
         <span class="perm-tipo">{{ p.tipo }}</span>
         <span class="perm-d">· {{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</span>
+        <div v-if="p.certificatoUrl" style="margin-top:6px">
+          <img :src="p.certificatoUrl" style="max-width:180px;max-height:120px;border-radius:6px;border:0.5px solid var(--border)" />
+        </div>
       </div>
       <span class="pill" :class="statoClass(p.stato)">{{ p.stato }}</span>
     </div>
@@ -68,6 +80,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { api } from '@/api'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 interface PermessoResponse {
   id: number
@@ -77,6 +92,7 @@ interface PermessoResponse {
   oraInizio: string | null
   oraFine: string | null
   note: string | null
+  certificatoUrl: string | null
   stato: string
 }
 
@@ -85,6 +101,34 @@ const richieste = ref<PermessoResponse[]>([])
 const error = ref('')
 const loading = ref(false)
 const loadingList = ref(false)
+const certificatoNome = ref('')
+const certificatoUrl = ref('')
+const uploadingCert = ref(false)
+const uploadErrCert = ref('')
+
+async function onCertificato(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  certificatoNome.value = file.name
+  uploadingCert.value = true
+  uploadErrCert.value = ''
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/permessi/certificato', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${auth.token}` },
+      body: fd,
+    })
+    if (!res.ok) throw new Error()
+    certificatoUrl.value = await res.text()
+  } catch {
+    uploadErrCert.value = 'Upload fallito.'
+    certificatoUrl.value = ''
+  } finally {
+    uploadingCert.value = false
+  }
+}
 
 const oraMode = computed(() => form.value.tipo === 'Permesso' && form.value.durata === 'Orario')
 
@@ -114,10 +158,13 @@ async function invia() {
       oraInizio: oraMode.value ? form.value.oraInizio : null,
       oraFine: oraMode.value ? form.value.oraFine : null,
       note: form.value.note || null,
+      certificatoUrl: certificatoUrl.value || null,
     }
     const created = await api.post<PermessoResponse>('/api/permessi', body)
     richieste.value.unshift(created)
     form.value = { tipo: 'Ferie', dal: '', al: '', note: '', durata: 'Giornaliero', oraInizio: '', oraFine: '' }
+    certificatoNome.value = ''
+    certificatoUrl.value = ''
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Errore durante l\'invio.'
   } finally {
