@@ -1,5 +1,5 @@
 <template>
-  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden">
+  <div class="card" style="margin-bottom:0;display:flex;flex-direction:column;height:480px">
     <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
       Chat
       <button class="btn-sm btn-ok" @click="showNuova = !showNuova">+ Nuova</button>
@@ -176,15 +176,11 @@ const editInputRef = ref<HTMLTextAreaElement | null>(null)
 
 const active = computed(() => store.conversazioni.find(c => c.id === activeId.value) ?? null)
 
-// configure marked: safe inline rendering
 marked.setOptions({ breaks: true })
 
 function renderMd(text: string): string {
-  // -# small text
   let t = text.replace(/^-#\s+(.+)$/gm, '<small>$1</small>')
-  // ~~strikethrough~~
   t = t.replace(/~~(.+?)~~/g, '<del>$1</del>')
-  // __underline__
   t = t.replace(/__(.+?)__/g, '<u>$1</u>')
   return marked.parse(t) as string
 }
@@ -306,7 +302,6 @@ async function avviaPrivata() {
   })
   if (!res.ok) return
   const conv = await res.json()
-  // add to list, un-dismissing if previously closed
   store.dismissed.delete(conv.id)
   store.saveDismissed()
   const exists = store.conversazioni.find(c => c.id === conv.id)
@@ -346,18 +341,18 @@ onUnmounted(() => store.disconnetti())
   font-size: 13px;
   line-height: 1.5;
 }
-.msg-md :deep(p)        { margin: 0 0 4px; }
+.msg-md :deep(p) { margin: 0 0 4px; }
 .msg-md :deep(p:last-child) { margin-bottom: 0; }
-.msg-md :deep(code)     { background: rgba(0,0,0,.08); border-radius: 3px; padding: 1px 4px; font-size: 12px; }
-.msg-md :deep(pre)      { background: rgba(0,0,0,.08); border-radius: 6px; padding: 8px; overflow-x: auto; }
+.msg-md :deep(code) { background: rgba(0,0,0,.08); border-radius: 3px; padding: 1px 4px; font-size: 12px; }
+.msg-md :deep(pre) { background: rgba(0,0,0,.08); border-radius: 6px; padding: 8px; overflow-x: auto; }
 .msg-md :deep(pre code) { background: none; padding: 0; }
 .msg-md :deep(ul), .msg-md :deep(ol) { margin: 2px 0; padding-left: 18px; }
-.msg-md :deep(strong)   { font-weight: 600; }
-.msg-md :deep(em)       { font-style: italic; }
-.msg-md :deep(a)        { color: var(--purple); }
-.msg-md :deep(small)    { font-size: 10px; opacity: .6; }
-.msg-md :deep(del)      { opacity: .6; }
-.msg-md :deep(u)        { text-decoration: underline; }
+.msg-md :deep(strong) { font-weight: 600; }
+.msg-md :deep(em) { font-style: italic; }
+.msg-md :deep(a) { color: var(--purple); }
+.msg-md :deep(small) { font-size: 10px; opacity: .6; }
+.msg-md :deep(del) { opacity: .6; }
+.msg-md :deep(u) { text-decoration: underline; }
 
 .msg-actions {
   display: flex;
