@@ -14,6 +14,8 @@ public class MinioConfig {
 
     @Value("${minio.url}")
     private String url;
+    @Value("${minio.public-url}")
+    private String publicUrl;
     @Value("${minio.access-key}")
     private String accessKey;
     @Value("${minio.secret-key}")
@@ -22,9 +24,18 @@ public class MinioConfig {
     private String bucket;
 
     @Bean
+    @org.springframework.context.annotation.Primary
     public MinioClient minioClient() {
         return MinioClient.builder()
                 .endpoint(url)
+                .credentials(accessKey, secretKey)
+                .build();
+    }
+
+    @Bean(name = "minioPublicClient")
+    public MinioClient minioPublicClient() {
+        return MinioClient.builder()
+                .endpoint(publicUrl)
                 .credentials(accessKey, secretKey)
                 .build();
     }

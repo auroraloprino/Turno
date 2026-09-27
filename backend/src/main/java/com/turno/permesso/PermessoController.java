@@ -26,13 +26,17 @@ public class PermessoController {
 
     private final PermessoService service;
     private final MinioClient minio;
+    private final MinioClient minioPublicClient;
 
     @Value("${minio.bucket}")
     private String bucket;
 
-    public PermessoController(PermessoService service, MinioClient minio) {
+    public PermessoController(PermessoService service,
+                              MinioClient minio,
+                              @org.springframework.beans.factory.annotation.Qualifier("minioPublicClient") MinioClient minioPublicClient) {
         this.service = service;
         this.minio = minio;
+        this.minioPublicClient = minioPublicClient;
     }
 
     @PostMapping
@@ -51,12 +55,12 @@ public class PermessoController {
                     .stream(file.getInputStream(), file.getSize(), -1)
                     .contentType(file.getContentType())
                     .build());
-            String url = minio.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            String url = minioPublicClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .bucket(bucket).object(objectName).method(Method.GET)
-                    .expiry(365, TimeUnit.DAYS).build());
+                    .expiry(7, TimeUnit.DAYS).build());
             return ResponseEntity.ok(url);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload fallito");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload fallito: " + e.getMessage());
         }
     }
 
@@ -83,5 +87,13 @@ public class PermessoController {
             @PathVariable Long id,
             @RequestParam StatoPermesso stato) {
         return ResponseEntity.ok(service.aggiorna(id, stato));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<PermessoResponse> modifica(
+            @PathVariable Long id,
+            @Valid @RequestBody PermessoRequest request,
+            @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(service.modifica(id, request, user));
     }
 }

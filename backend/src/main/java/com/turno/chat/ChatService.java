@@ -5,8 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -31,23 +29,21 @@ public class ChatService {
     private final UserRepository userRepo;
     private final SimpMessagingTemplate broker;
     private final MinioClient minio;
-
-    @Value("${minio.bucket}")
-    private String bucket;
-
-    @Value("${minio.url}")
-    private String minioInternalUrl;
-
-    @Value("${minio.public-url}")
-    private String minioPublicUrl;
+    private final MinioClient minioPublicClient;
+    private final String bucket;
 
     public ChatService(ConversazioneRepository convRepo, MessaggioRepository msgRepo,
-                       UserRepository userRepo, SimpMessagingTemplate broker, MinioClient minio) {
+                       UserRepository userRepo, SimpMessagingTemplate broker,
+                       MinioClient minio,
+                       @org.springframework.beans.factory.annotation.Qualifier("minioPublicClient") MinioClient minioPublicClient,
+                       @org.springframework.beans.factory.annotation.Value("${minio.bucket}") String bucket) {
         this.convRepo = convRepo;
         this.msgRepo = msgRepo;
         this.userRepo = userRepo;
         this.broker = broker;
         this.minio = minio;
+        this.minioPublicClient = minioPublicClient;
+        this.bucket = bucket;
     }
 
     public List<ChatDto.ConversazioneResponse> conversazioni(Long userId) {
@@ -77,7 +73,7 @@ public class ChatService {
         conv.getPartecipanti().stream()
                 .filter(u -> !u.getId().equals(sender.getId()))
                 .forEach(u -> broker.convertAndSend("/topic/notifiche/" + u.getId(),
-                        java.util.Map.of("tipo", "chat", "messaggio", sender.getName() + ": " + testo)));
+                        java.util.Map.of("tipo", "chat", "conversazioneId", conversazioneId, "messaggio", sender.getName() + ": " + testo)));
         return response;
     }
 
@@ -97,10 +93,9 @@ public class ChatService {
                     .stream(file.getInputStream(), file.getSize(), -1)
                     .contentType(file.getContentType())
                     .build());
-            url = minio.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+            url = minioPublicClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .bucket(bucket).object(objectName).method(Method.GET)
-                    .expiry(7, TimeUnit.DAYS).build())
-                    .replace(minioInternalUrl, minioPublicUrl);
+                    .expiry(7, TimeUnit.DAYS).build());
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload fallito");
         }

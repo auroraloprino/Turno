@@ -60,4 +60,21 @@ public class PermessoService {
         producer.publish(new PermessoStatoEvent(id, p.getUser().getId(), stato));
         return response;
     }
+
+    @Transactional
+    public PermessoResponse modifica(Long id, PermessoRequest req, User user) {
+        Permesso p = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+        if (!p.getUser().getId().equals(user.getId()))
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (p.getStato() != StatoPermesso.IN_ATTESA)
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Non modificabile");
+        p.setTipo(req.tipo());
+        p.setDal(req.dal());
+        p.setAl(req.al());
+        p.setOraInizio(req.oraInizio());
+        p.setOraFine(req.oraFine());
+        p.setNote(req.note());
+        return PermessoResponse.from(repository.save(p));
+    }
 }
