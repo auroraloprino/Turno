@@ -49,7 +49,7 @@
       <div v-if="permessiAttesa.length === 0" class="empty-state">Nessuna richiesta in attesa.</div>
       <div v-for="p in permessiAttesa" :key="p.id" class="perm-row">
         <div>
-          <div class="perm-info">{{ p.userName }} — {{ p.tipo }}</div>
+          <div class="perm-info">{{ p.userName }} - {{ p.tipo }}</div>
           <div class="perm-date">{{ fmt(p.dal) }}</div>
         </div>
         <div class="perm-actions">

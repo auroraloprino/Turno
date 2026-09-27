@@ -50,31 +50,10 @@
       <div class="topbar">
         <h1>{{ pageTitle }}</h1>
         <div style="display:flex;align-items:center;gap:12px">
-          <div style="position:relative;cursor:pointer" @click="showNotifiche = !showNotifiche">
-            <svg viewBox="0 0 16 16" fill="none" style="width:20px;height:20px">
-              <path d="M8 2a4 4 0 00-4 4v3l-1 1v1h10v-1l-1-1V6a4 4 0 00-4-4z" stroke="#6C63D5" stroke-width="1.2"/>
-              <path d="M6.5 13a1.5 1.5 0 003 0" stroke="#6C63D5" stroke-width="1.2"/>
-            </svg>
-            <span v-if="chat.totalNonLetti + notifiche.lista.length" style="position:absolute;top:-4px;right:-4px;background:#e74c3c;color:#fff;border-radius:50%;font-size:10px;width:14px;height:14px;display:flex;align-items:center;justify-content:center">
-              {{ chat.totalNonLetti + notifiche.lista.length }}
-            </span>
-            <div v-if="showNotifiche" style="position:absolute;right:0;top:28px;background:var(--bg-secondary);border:0.5px solid var(--border-md);border-radius:8px;min-width:260px;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:100">
-              <div v-if="chat.totalNonLetti" style="padding:8px 12px;border-bottom:0.5px solid var(--border);font-size:12px;font-weight:600;color:var(--purple)">Chat ({{ chat.totalNonLetti }} non letti)</div>
-              <div v-for="conv in chat.conversazioni.filter(c => c.nonLetti > 0)" :key="conv.id" style="padding:8px 12px;border-bottom:0.5px solid var(--border);font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--text-primary)">
-                <span>{{ conv.nome }}</span>
-                <span style="background:#e74c3c;color:#fff;border-radius:50%;font-size:10px;width:18px;height:18px;display:flex;align-items:center;justify-content:center">{{ conv.nonLetti }}</span>
-              </div>
-              <div v-if="notifiche.lista.length" style="padding:8px 12px;border-bottom:0.5px solid var(--border);font-size:12px;font-weight:600;color:var(--text-secondary)">Notifiche</div>
-              <div v-for="(n, i) in notifiche.lista" :key="i" style="padding:10px 12px;border-bottom:0.5px solid var(--border);font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--text-primary)">
-                <span>{{ n.messaggio }}</span>
-                <span style="cursor:pointer;color:var(--text-tertiary);margin-left:8px" @click.stop="notifiche.rimuovi(i)">&#10005;</span>
-              </div>
-              <div v-if="!chat.totalNonLetti && !notifiche.lista.length" style="padding:12px;color:var(--text-secondary);font-size:13px">Nessuna notifica</div>
-            </div>
-          </div>
           <span class="badge">Admin</span>
           <button style="background:none;border:none;color:var(--coral-dark);cursor:pointer;font-size:12px;padding:0" @click="logout">Esci</button>
         </div>
+      </div>
       <div class="content">
         <RouterView />
       </div>
