@@ -9,6 +9,7 @@
           <div class="perm-info">{{ p.userName }} — {{ p.tipo }}</div>
           <div class="perm-date">{{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</div>
           <div v-if="p.note" class="perm-note">{{ p.note }}</div>
+          <a v-if="p.certificatoUrl" :href="p.certificatoUrl" target="_blank" class="cert-link">📎 Certificato</a>
         </div>
         <div class="perm-actions">
           <button class="btn-sm btn-ok" @click="aggiorna(p.id, 'APPROVATO')">Approva</button>
@@ -25,6 +26,7 @@
         <div>
           <span class="perm-tipo">{{ p.userName }} — {{ p.tipo }}</span>
           <span class="perm-d">· {{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</span>
+          <a v-if="p.certificatoUrl" :href="p.certificatoUrl" target="_blank" class="cert-link">📎 Certificato</a>
         </div>
         <span class="pill" :class="statoClass(p.stato)">{{ p.stato }}</span>
       </div>
@@ -44,6 +46,7 @@ interface PermessoResponse {
   dal: string
   al: string
   note: string | null
+  certificatoUrl: string | null
   stato: string
 }
 
@@ -108,5 +111,11 @@ onUnmounted(() => clearInterval(timer))
   font-size: 11px;
   color: var(--text-tertiary);
   margin-top: 2px;
+}
+.cert-link {
+  font-size: 11px;
+  color: var(--purple);
+  margin-top: 3px;
+  display: inline-block;
 }
 </style>
