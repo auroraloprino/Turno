@@ -100,7 +100,7 @@ export const useChatStore = defineStore("chat", () => {
 
   function connetti() {
     const auth = useAuthStore();
-    if (!auth.token || client) return;
+    if (!auth.token || client || connesso.value) return;
 
     client = new Client({
       webSocketFactory: () => new SockJS("/ws"),
