@@ -79,6 +79,7 @@ public class ChatService {
         if (!partecipa) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 
         String objectName = UUID.randomUUID() + "_" + file.getOriginalFilename();
+        String url;
         try {
             minio.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
@@ -86,17 +87,11 @@ public class ChatService {
                     .stream(file.getInputStream(), file.getSize(), -1)
                     .contentType(file.getContentType())
                     .build());
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload fallito");
-        }
-
-        String url;
-        try {
             url = minio.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .bucket(bucket).object(objectName).method(Method.GET)
                     .expiry(7, TimeUnit.DAYS).build());
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "URL fallito");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload fallito");
         }
 
         Messaggio m = new Messaggio(conv, sender, testo.isBlank() ? file.getOriginalFilename() : testo, Instant.now());
@@ -152,13 +147,13 @@ public class ChatService {
                 .filter(c -> c.getTipo().equals("private") &&
                         c.getPartecipanti().stream().anyMatch(u -> u.getId().equals(userIdB)))
                 .findFirst()
-                .map(ChatDto.ConversazioneResponse::from)
+                .map(c -> ChatDto.ConversazioneResponse.from(c, userIdA))
                 .orElseGet(() -> {
                     Conversazione conv = new Conversazione();
                     conv.setTipo("private");
                     conv.setNome(b.getName());
                     conv.setPartecipanti(Set.of(a, b));
-                    return ChatDto.ConversazioneResponse.from(convRepo.save(conv));
+                    return ChatDto.ConversazioneResponse.from(convRepo.save(conv), userIdA);
                 });
     }
 }
