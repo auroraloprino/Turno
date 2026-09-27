@@ -11,45 +11,53 @@
       </div>
       <div class="form-group">
         <label>Password</label>
-        <input v-model="password" type="password" autocomplete="current-password" @keydown.enter="login" />
+        <input
+          v-model="password"
+          type="password"
+          autocomplete="current-password"
+          @keydown.enter="login"
+        />
       </div>
       <span v-if="error" class="login-error">{{ error }}</span>
       <button class="btn-primary" :disabled="loading" @click="login">
-        {{ loading ? 'Accesso…' : 'Accedi' }}
+        {{ loading ? "Accesso…" : "Accedi" }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuthStore } from "@/stores/auth";
 
-const email    = ref('')
-const password = ref('')
-const error    = ref('')
-const loading  = ref(false)
-const router   = useRouter()
-const auth     = useAuthStore()
+const email = ref("");
+const password = ref("");
+const error = ref("");
+const loading = ref(false);
+const router = useRouter();
+const auth = useAuthStore();
 
 async function login() {
-  error.value = ''
+  error.value = "";
   if (!email.value || !password.value) {
-    error.value = 'Inserisci email e password.'
-    return
+    error.value = "Inserisci email e password.";
+    return;
   }
-  loading.value = true
+  loading.value = true;
   try {
-    await auth.login(email.value, password.value)
-    const dest = auth.role === 'OWNER' || auth.role === 'ADMIN' ? '/admin/dashboard' : '/user/timbratura'
-    await router.push(dest)
-    if (router.currentRoute.value.path === '/login') {
-      window.location.href = dest
+    await auth.login(email.value, password.value);
+    const dest =
+      auth.role === "OWNER" || auth.role === "ADMIN"
+        ? "/admin/dashboard"
+        : "/user/timbratura";
+    await router.push(dest);
+    if (router.currentRoute.value.path === "/login") {
+      window.location.href = dest;
     }
   } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Errore sconosciuto.'
-    loading.value = false
+    error.value = e instanceof Error ? e.message : "Errore sconosciuto.";
+    loading.value = false;
   }
 }
 </script>

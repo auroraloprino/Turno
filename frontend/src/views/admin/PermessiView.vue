@@ -3,17 +3,31 @@
     <div class="card">
       <div class="card-title">In attesa</div>
       <div v-if="loadingAttesa" class="empty-state">Caricamento…</div>
-      <div v-else-if="inAttesa.length === 0" class="empty-state">Nessuna richiesta in attesa.</div>
+      <div v-else-if="inAttesa.length === 0" class="empty-state">
+        Nessuna richiesta in attesa.
+      </div>
       <div v-for="p in inAttesa" :key="p.id" class="perm-row">
         <div>
           <div class="perm-info">{{ p.userName }} - {{ p.tipo }}</div>
-          <div class="perm-date">{{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</div>
+          <div class="perm-date">
+            {{ fmt(p.dal) }}{{ p.al !== p.dal ? " – " + fmt(p.al) : "" }}
+          </div>
           <div v-if="p.note" class="perm-note">{{ p.note }}</div>
-          <a v-if="p.certificatoUrl" :href="p.certificatoUrl" target="_blank" class="cert-link">📎 Certificato</a>
+          <a
+            v-if="p.certificatoUrl"
+            :href="p.certificatoUrl"
+            target="_blank"
+            class="cert-link"
+            >📎 Certificato</a
+          >
         </div>
         <div class="perm-actions">
-          <button class="btn-sm btn-ok" @click="aggiorna(p.id, 'APPROVATO')">Approva</button>
-          <button class="btn-sm btn-no" @click="aggiorna(p.id, 'RIFIUTATO')">Rifiuta</button>
+          <button class="btn-sm btn-ok" @click="aggiorna(p.id, 'APPROVATO')">
+            Approva
+          </button>
+          <button class="btn-sm btn-no" @click="aggiorna(p.id, 'RIFIUTATO')">
+            Rifiuta
+          </button>
         </div>
       </div>
     </div>
@@ -21,11 +35,16 @@
     <div class="card">
       <div class="card-title">Tutte le richieste</div>
       <div v-if="loadingTutti" class="empty-state">Caricamento…</div>
-      <div v-else-if="tutti.length === 0" class="empty-state">Nessuna richiesta.</div>
+      <div v-else-if="tutti.length === 0" class="empty-state">
+        Nessuna richiesta.
+      </div>
       <div v-for="p in tutti" :key="p.id" class="perm-row-past">
         <div>
           <span class="perm-tipo">{{ p.userName }} - {{ p.tipo }}</span>
-          <span class="perm-d">· {{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</span>
+          <span class="perm-d"
+            >· {{ fmt(p.dal)
+            }}{{ p.al !== p.dal ? " – " + fmt(p.al) : "" }}</span
+          >
           <div v-if="p.note" class="perm-note">{{ p.note }}</div>
         </div>
         <span class="pill" :class="statoClass(p.stato)">{{ p.stato }}</span>
@@ -35,68 +54,73 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
-import { api } from '@/api'
+import { ref, onMounted, onUnmounted } from "vue";
+import { api } from "@/api";
 
 interface PermessoResponse {
-  id: number
-  userId: number
-  userName: string
-  tipo: string
-  dal: string
-  al: string
-  note: string | null
-  certificatoUrl: string | null
-  stato: string
+  id: number;
+  userId: number;
+  userName: string;
+  tipo: string;
+  dal: string;
+  al: string;
+  note: string | null;
+  certificatoUrl: string | null;
+  stato: string;
 }
 
-const inAttesa = ref<PermessoResponse[]>([])
-const tutti = ref<PermessoResponse[]>([])
-const loadingAttesa = ref(false)
-const loadingTutti = ref(false)
+const inAttesa = ref<PermessoResponse[]>([]);
+const tutti = ref<PermessoResponse[]>([]);
+const loadingAttesa = ref(false);
+const loadingTutti = ref(false);
 
 async function aggiorna(id: number, stato: string) {
-  const updated = await api.patch<PermessoResponse>(`/api/permessi/${id}/stato?stato=${stato}`, {})
-  inAttesa.value = inAttesa.value.filter(p => p.id !== id)
-  const idx = tutti.value.findIndex(p => p.id === id)
-  if (idx !== -1) tutti.value[idx] = updated
+  const updated = await api.patch<PermessoResponse>(
+    `/api/permessi/${id}/stato?stato=${stato}`,
+    {},
+  );
+  inAttesa.value = inAttesa.value.filter((p) => p.id !== id);
+  const idx = tutti.value.findIndex((p) => p.id === id);
+  if (idx !== -1) tutti.value[idx] = updated;
 }
 
 function fmt(d: string) {
-  if (!d) return ''
-  const [y, m, g] = d.split('-')
-  return `${g}/${m}/${y}`
+  if (!d) return "";
+  const [y, m, g] = d.split("-");
+  return `${g}/${m}/${y}`;
 }
 
 function statoClass(stato: string) {
-  if (stato === 'APPROVATO') return 'p-ok'
-  if (stato === 'RIFIUTATO') return 'p-no'
-  return 'p-pend'
+  if (stato === "APPROVATO") return "p-ok";
+  if (stato === "RIFIUTATO") return "p-no";
+  return "p-pend";
 }
 
-let timer: ReturnType<typeof setInterval>
+let timer: ReturnType<typeof setInterval>;
 
 async function fetchAll() {
-  loadingAttesa.value = true
-  loadingTutti.value = true
+  loadingAttesa.value = true;
+  loadingTutti.value = true;
   const [a, t] = await Promise.allSettled([
-    api.get<PermessoResponse[]>('/api/permessi/in-attesa'),
-    api.get<PermessoResponse[]>('/api/permessi'),
-  ])
-  if (a.status === 'fulfilled') inAttesa.value = a.value
-  if (t.status === 'fulfilled') tutti.value = t.value
-  loadingAttesa.value = false
-  loadingTutti.value = false
+    api.get<PermessoResponse[]>("/api/permessi/in-attesa"),
+    api.get<PermessoResponse[]>("/api/permessi"),
+  ]);
+  if (a.status === "fulfilled") inAttesa.value = a.value;
+  if (t.status === "fulfilled") tutti.value = t.value;
+  loadingAttesa.value = false;
+  loadingTutti.value = false;
 }
 
 onMounted(() => {
-  fetchAll()
+  fetchAll();
   timer = setInterval(() => {
-    api.get<PermessoResponse[]>('/api/permessi/in-attesa').then(v => { inAttesa.value = v })
-  }, 20000)
-})
+    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((v) => {
+      inAttesa.value = v;
+    });
+  }, 20000);
+});
 
-onUnmounted(() => clearInterval(timer))
+onUnmounted(() => clearInterval(timer));
 </script>
 
 <style scoped>

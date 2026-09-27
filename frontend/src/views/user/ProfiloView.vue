@@ -33,46 +33,47 @@
       <span v-if="errore" class="errore">{{ errore }}</span>
       <span v-if="successo" class="successo">Password aggiornata.</span>
       <button class="btn-send" :disabled="loading" @click="salva">
-        {{ loading ? 'Salvataggio…' : 'Salva' }}
+        {{ loading ? "Salvataggio…" : "Salva" }}
       </button>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useAuthStore } from '@/stores/auth'
-import { api } from '@/api'
+import { ref } from "vue";
+import { useAuthStore } from "@/stores/auth";
+import { api } from "@/api";
 
-const auth = useAuthStore()
-const form = ref({ vecchia: '', nuova: '', conferma: '' })
-const errore = ref('')
-const successo = ref(false)
-const loading = ref(false)
+const auth = useAuthStore();
+const form = ref({ vecchia: "", nuova: "", conferma: "" });
+const errore = ref("");
+const successo = ref(false);
+const loading = ref(false);
 
 async function salva() {
-  errore.value = ''
-  successo.value = false
+  errore.value = "";
+  successo.value = false;
   if (!form.value.vecchia || !form.value.nuova || !form.value.conferma) {
-    errore.value = 'Compila tutti i campi.'
-    return
+    errore.value = "Compila tutti i campi.";
+    return;
   }
   if (form.value.nuova !== form.value.conferma) {
-    errore.value = 'Le password non coincidono.'
-    return
+    errore.value = "Le password non coincidono.";
+    return;
   }
-  loading.value = true
+  loading.value = true;
   try {
     await api.patch(`/api/users/${auth.user?.id}/password`, {
       currentPassword: form.value.vecchia,
       newPassword: form.value.nuova,
-    })
-    form.value = { vecchia: '', nuova: '', conferma: '' }
-    successo.value = true
+    });
+    form.value = { vecchia: "", nuova: "", conferma: "" };
+    successo.value = true;
   } catch (e: unknown) {
-    errore.value = e instanceof Error ? e.message : 'Errore durante il salvataggio.'
+    errore.value =
+      e instanceof Error ? e.message : "Errore durante il salvataggio.";
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
@@ -85,9 +86,23 @@ async function salva() {
   border-bottom: 0.5px solid var(--border);
   font-size: 13px;
 }
-.info-row:last-child { border-bottom: none; }
-.info-label { color: var(--text-secondary); width: 80px; flex-shrink: 0; }
-.info-val { color: var(--text-primary); }
-.errore { font-size: 12px; color: var(--coral-dark); }
-.successo { font-size: 12px; color: #1D9E75; }
+.info-row:last-child {
+  border-bottom: none;
+}
+.info-label {
+  color: var(--text-secondary);
+  width: 80px;
+  flex-shrink: 0;
+}
+.info-val {
+  color: var(--text-primary);
+}
+.errore {
+  font-size: 12px;
+  color: var(--coral-dark);
+}
+.successo {
+  font-size: 12px;
+  color: #1d9e75;
+}
 </style>

@@ -375,17 +375,17 @@ async function uploadFile(e: Event) {
 
 function toggleConv(id: number) {
   if (activeId.value === id) {
-    activeId.value = null
-    store.setActive(null)
-  } else open(id)
+    activeId.value = null;
+    store.setActive(null);
+  } else open(id);
 }
 
 function chiudiConv(id: number) {
   if (activeId.value === id) {
-    activeId.value = null
-    store.setActive(null)
+    activeId.value = null;
+    store.setActive(null);
   }
-  store.rimuovi(id)
+  store.rimuovi(id);
 }
 
 function selezionaUtente(u: { id: number; name: string; email: string }) {
