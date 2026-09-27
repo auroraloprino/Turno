@@ -68,8 +68,8 @@
       <div style="flex:1">
         <span class="perm-tipo">{{ p.tipo }}</span>
         <span class="perm-d">· {{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</span>
-        <div v-if="p.certificatoUrl" style="margin-top:6px">
-          <img :src="p.certificatoUrl" style="max-width:180px;max-height:120px;border-radius:6px;border:0.5px solid var(--border)" />
+        <div v-if="p.certificatoUrl" style="margin-top:4px">
+          <a :href="p.certificatoUrl" target="_blank" style="font-size:11px;color:var(--purple)">📎 Vedi certificato</a>
         </div>
       </div>
       <span class="pill" :class="statoClass(p.stato)">{{ p.stato }}</span>
@@ -196,5 +196,21 @@ onMounted(fetchMiei)
 .errore {
   font-size: 12px;
   color: var(--coral-dark);
+}
+.file-upload-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px;
+  border: 0.5px dashed var(--border-md);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: border-color .15s, color .15s;
+}
+.file-upload-label:hover {
+  border-color: var(--purple);
+  color: var(--text-primary);
 }
 </style>
