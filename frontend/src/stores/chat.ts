@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Client } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
 import { api } from '@/api'
 import { useAuthStore } from '@/stores/auth'
 
@@ -31,6 +32,7 @@ export const useChatStore = defineStore('chat', () => {
   const connesso = ref(false)
   let client: Client | null = null
   const subscribed = new Set<number>()
+  const _activeId = ref<number | null>(null)
   const _dismissedKey = 'chat_dismissed'
   const dismissed = new Set<number>(JSON.parse(localStorage.getItem(_dismissedKey) || '[]'))
 
@@ -48,6 +50,7 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function apri(id: number) {
+    _activeId.value = id
     const conv = conversazioni.value.find(c => c.id === id)
     if (!conv) return
     conv.messaggi = await api.get<Messaggio[]>(`/api/chat/conversazioni/${id}/messaggi`)
@@ -87,19 +90,20 @@ export const useChatStore = defineStore('chat', () => {
     const auth = useAuthStore()
     if (!auth.token || client) return
 
-    const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/websocket`
-
     client = new Client({
-      brokerURL: wsUrl,
+      webSocketFactory: () => new SockJS('/ws'),
       connectHeaders: { Authorization: `Bearer ${auth.token}` },
-      onConnect: () => {
+      onConnect: async () => {
         connesso.value = true
+        await carica()
         conversazioni.value.forEach(c => _subscribe(c.id))
       },
       onDisconnect: () => { connesso.value = false },
+      reconnectDelay: 5000,
     })
     client.activate()
   }
+
 
   function disconnetti() {
     client?.deactivate()
@@ -122,10 +126,13 @@ export const useChatStore = defineStore('chat', () => {
         conv.messaggi[idx] = msg
       } else {
         conv.messaggi.push(msg)
-        conv.nonLetti++
+        const auth = useAuthStore()
+        if (msg.senderId !== auth.user?.id && _activeId.value !== conversazioneId) conv.nonLetti++
       }
     })
   }
 
-  return { conversazioni, connesso, dismissed, carica, apri, invia, modifica, elimina, rimuovi, saveDismissed: _saveDismissed, connetti, disconnetti }
+  const totalNonLetti = computed(() => conversazioni.value.reduce((s, c) => s + c.nonLetti, 0))
+
+  return { conversazioni, connesso, dismissed, totalNonLetti, carica, apri, invia, modifica, elimina, rimuovi, saveDismissed: _saveDismissed, connetti, disconnetti, setActive: (id: number | null) => { _activeId.value = id } }
 })

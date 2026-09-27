@@ -6,7 +6,7 @@
       <div v-else-if="inAttesa.length === 0" class="empty-state">Nessuna richiesta in attesa.</div>
       <div v-for="p in inAttesa" :key="p.id" class="perm-row">
         <div>
-          <div class="perm-info">{{ p.userName }} — {{ p.tipo }}</div>
+          <div class="perm-info">{{ p.userName }} - {{ p.tipo }}</div>
           <div class="perm-date">{{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</div>
           <div v-if="p.note" class="perm-note">{{ p.note }}</div>
           <a v-if="p.certificatoUrl" :href="p.certificatoUrl" target="_blank" class="cert-link">📎 Certificato</a>
@@ -24,9 +24,9 @@
       <div v-else-if="tutti.length === 0" class="empty-state">Nessuna richiesta.</div>
       <div v-for="p in tutti" :key="p.id" class="perm-row-past">
         <div>
-          <span class="perm-tipo">{{ p.userName }} — {{ p.tipo }}</span>
+          <span class="perm-tipo">{{ p.userName }} - {{ p.tipo }}</span>
           <span class="perm-d">· {{ fmt(p.dal) }}{{ p.al !== p.dal ? ' – ' + fmt(p.al) : '' }}</span>
-          <a v-if="p.certificatoUrl" :href="p.certificatoUrl" target="_blank" class="cert-link">📎 Certificato</a>
+          <div v-if="p.note" class="perm-note">{{ p.note }}</div>
         </div>
         <span class="pill" :class="statoClass(p.stato)">{{ p.stato }}</span>
       </div>
@@ -79,16 +79,14 @@ let timer: ReturnType<typeof setInterval>
 async function fetchAll() {
   loadingAttesa.value = true
   loadingTutti.value = true
-  try {
-    inAttesa.value = await api.get<PermessoResponse[]>('/api/permessi/in-attesa')
-  } finally {
-    loadingAttesa.value = false
-  }
-  try {
-    tutti.value = await api.get<PermessoResponse[]>('/api/permessi')
-  } finally {
-    loadingTutti.value = false
-  }
+  const [a, t] = await Promise.allSettled([
+    api.get<PermessoResponse[]>('/api/permessi/in-attesa'),
+    api.get<PermessoResponse[]>('/api/permessi'),
+  ])
+  if (a.status === 'fulfilled') inAttesa.value = a.value
+  if (t.status === 'fulfilled') tutti.value = t.value
+  loadingAttesa.value = false
+  loadingTutti.value = false
 }
 
 onMounted(() => {
