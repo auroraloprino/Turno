@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB:turnodb}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:turnodb}
     username: ${POSTGRES_USER:turno}
     password: ${POSTGRES_PASSWORD:password}
   jpa:
@@ -10,7 +10,7 @@ spring:
   flyway:
     enabled: true
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
     consumer:
       group-id: turno-group
       auto-offset-reset: earliest
@@ -32,7 +32,8 @@ app:
     password: ${OWNER_PASSWORD}
 
 minio:
-  url: http://localhost:9000
+  url: http://${MINIO_HOST:localhost}:${MINIO_PORT:9000}
+  public-url: http://${MINIO_PUBLIC_HOST:localhost}:${MINIO_PORT:9000}
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket: turno-docs
