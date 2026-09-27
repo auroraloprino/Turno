@@ -35,6 +35,12 @@ public class ChatService {
     @Value("${minio.bucket}")
     private String bucket;
 
+    @Value("${minio.url}")
+    private String minioInternalUrl;
+
+    @Value("${minio.public-url}")
+    private String minioPublicUrl;
+
     public ChatService(ConversazioneRepository convRepo, MessaggioRepository msgRepo,
                        UserRepository userRepo, SimpMessagingTemplate broker, MinioClient minio) {
         this.convRepo = convRepo;
@@ -68,6 +74,10 @@ public class ChatService {
         Messaggio m = msgRepo.save(new Messaggio(conv, sender, testo, Instant.now()));
         ChatDto.MessaggioResponse response = ChatDto.MessaggioResponse.from(m);
         broker.convertAndSend("/topic/conversazione/" + conversazioneId, response);
+        conv.getPartecipanti().stream()
+                .filter(u -> !u.getId().equals(sender.getId()))
+                .forEach(u -> broker.convertAndSend("/topic/notifiche/" + u.getId(),
+                        java.util.Map.of("tipo", "chat", "messaggio", sender.getName() + ": " + testo)));
         return response;
     }
 
@@ -89,7 +99,8 @@ public class ChatService {
                     .build());
             url = minio.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
                     .bucket(bucket).object(objectName).method(Method.GET)
-                    .expiry(7, TimeUnit.DAYS).build());
+                    .expiry(7, TimeUnit.DAYS).build())
+                    .replace(minioInternalUrl, minioPublicUrl);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Upload fallito");
         }
