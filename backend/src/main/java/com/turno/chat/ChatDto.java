@@ -15,8 +15,7 @@ public class ChatDto {
             String allegatoNome,
             Instant timestamp,
             boolean modificato,
-            boolean eliminato
-    ) {
+            boolean eliminato) {
         public static MessaggioResponse from(Messaggio m) {
             return new MessaggioResponse(
                     m.getId(),
@@ -28,8 +27,7 @@ public class ChatDto {
                     m.getAllegatoNome(),
                     m.getTimestamp(),
                     m.isModificato(),
-                    m.isEliminato()
-            );
+                    m.isEliminato());
         }
     }
 
@@ -37,15 +35,13 @@ public class ChatDto {
             Long id,
             String tipo,
             String nome,
-            List<Long> partecipanti
-    ) {
+            List<Long> partecipanti) {
         public static ConversazioneResponse from(Conversazione c) {
             return new ConversazioneResponse(
                     c.getId(),
                     c.getTipo(),
                     c.getNome(),
-                    c.getPartecipanti().stream().map(u -> u.getId()).toList()
-            );
+                    c.getPartecipanti().stream().map(u -> u.getId()).toList());
         }
 
         public static ConversazioneResponse from(Conversazione c, Long viewerId) {
@@ -61,11 +57,13 @@ public class ChatDto {
                     c.getId(),
                     c.getTipo(),
                     nome,
-                    c.getPartecipanti().stream().map(u -> u.getId()).toList()
-            );
+                    c.getPartecipanti().stream().map(u -> u.getId()).toList());
         }
     }
 
-    public record InviaMessaggioRequest(String testo) {}
-    public record ModificaMessaggioRequest(String testo) {}
+    public record InviaMessaggioRequest(String testo) {
+    }
+
+    public record ModificaMessaggioRequest(String testo) {
+    }
 }

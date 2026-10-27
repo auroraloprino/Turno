@@ -1,13 +1,14 @@
 package com.turno.config;
 
-import io.minio.BucketExistsArgs;
-import io.minio.MakeBucketArgs;
-import io.minio.MinioClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import io.minio.BucketExistsArgs;
+import io.minio.MakeBucketArgs;
+import io.minio.MinioClient;
 
 @Configuration
 public class MinioConfig {
@@ -45,8 +46,10 @@ public class MinioConfig {
         return (ApplicationArguments args) -> {
             try {
                 boolean exists = minioClient.bucketExists(BucketExistsArgs.builder().bucket(bucket).build());
-                if (!exists) minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
-            } catch (io.minio.errors.MinioException | java.io.IOException | java.security.InvalidKeyException | java.security.NoSuchAlgorithmException e) {
+                if (!exists)
+                    minioClient.makeBucket(MakeBucketArgs.builder().bucket(bucket).build());
+            } catch (io.minio.errors.MinioException | java.io.IOException | java.security.InvalidKeyException
+                    | java.security.NoSuchAlgorithmException e) {
                 System.err.println("[MinIO] bucket init failed: " + e.getMessage());
             }
         };

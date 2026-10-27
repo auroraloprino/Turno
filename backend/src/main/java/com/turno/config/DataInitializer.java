@@ -1,13 +1,14 @@
 package com.turno.config;
 
-import com.turno.user.Role;
-import com.turno.user.User;
-import com.turno.user.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import com.turno.user.Role;
+import com.turno.user.User;
+import com.turno.user.UserRepository;
 
 @Component
 public class DataInitializer implements ApplicationRunner {
@@ -28,7 +29,8 @@ public class DataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (userRepository.existsByEmail(email)) return;
+        if (userRepository.existsByEmail(email))
+            return;
 
         userRepository.save(User.builder()
                 .name("Owner")

@@ -9,8 +9,7 @@ public record TurnoResponse(
         String userName,
         LocalDate data,
         LocalTime inizio,
-        LocalTime fine
-) {
+        LocalTime fine) {
     public static TurnoResponse from(Turno t) {
         return new TurnoResponse(
                 t.getId(),
@@ -18,7 +17,6 @@ public record TurnoResponse(
                 t.getUser().getName(),
                 t.getData(),
                 t.getInizio(),
-                t.getFine()
-        );
+                t.getFine());
     }
 }

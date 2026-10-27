@@ -1,7 +1,5 @@
 package com.turno.config;
 
-import com.turno.security.JwtService;
-import com.turno.user.UserRepository;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
@@ -15,6 +13,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+import com.turno.security.JwtService;
+import com.turno.user.UserRepository;
 
 @Configuration
 @EnableWebSocketMessageBroker
@@ -51,9 +52,11 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                         try {
                             String email = jwtService.parse(authHeader.substring(7)).getSubject();
                             userRepository.findByEmail(email).ifPresent(user -> {
-                                accessor.setUser(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
+                                accessor.setUser(
+                                        new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
                             });
-                        } catch (Exception ignored) {}
+                        } catch (Exception ignored) {
+                        }
                     }
                 }
                 return message;

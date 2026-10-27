@@ -1,10 +1,19 @@
 package com.turno.chat;
 
-import com.turno.user.User;
-import jakarta.persistence.*;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import com.turno.user.User;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "conversazioni")
@@ -21,21 +30,37 @@ public class Conversazione {
     private String nome;
 
     @ManyToMany
-    @JoinTable(
-        name = "conversazione_partecipanti",
-        joinColumns = @JoinColumn(name = "conversazione_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
+    @JoinTable(name = "conversazione_partecipanti", joinColumns = @JoinColumn(name = "conversazione_id"), inverseJoinColumns = @JoinColumn(name = "user_id"))
     private Set<User> partecipanti = new HashSet<>();
 
-    public Conversazione() {}
+    public Conversazione() {
+    }
 
-    public Long getId() { return id; }
-    public String getTipo() { return tipo; }
-    public String getNome() { return nome; }
-    public Set<User> getPartecipanti() { return partecipanti; }
+    public Long getId() {
+        return id;
+    }
 
-    public void setTipo(String tipo) { this.tipo = tipo; }
-    public void setNome(String nome) { this.nome = nome; }
-    public void setPartecipanti(Set<User> partecipanti) { this.partecipanti = partecipanti; }
+    public String getTipo() {
+        return tipo;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public Set<User> getPartecipanti() {
+        return partecipanti;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public void setPartecipanti(Set<User> partecipanti) {
+        this.partecipanti = partecipanti;
+    }
 }

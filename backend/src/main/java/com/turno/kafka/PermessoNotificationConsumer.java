@@ -16,10 +16,10 @@ public class PermessoNotificationConsumer {
     @KafkaListener(topics = "permesso-stato", groupId = "turno-group")
     public void consume(PermessoStatoEvent event) {
         ws.convertAndSend(
-            "/topic/notifiche/" + event.userId(),
-            new Notifica("permesso", "La tua richiesta è stata " + event.stato().name().toLowerCase())
-        );
+                "/topic/notifiche/" + event.userId(),
+                new Notifica("permesso", "La tua richiesta è stata " + event.stato().name().toLowerCase()));
     }
 
-    public record Notifica(String tipo, String messaggio) {}
+    public record Notifica(String tipo, String messaggio) {
+    }
 }

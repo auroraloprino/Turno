@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,10 @@ public class ChatService {
     private final String bucket;
 
     public ChatService(ConversazioneRepository convRepo, MessaggioRepository msgRepo,
-                       UserRepository userRepo, SimpMessagingTemplate broker,
-                       MinioClient minio,
-                       @org.springframework.beans.factory.annotation.Qualifier("minioPublicClient") MinioClient minioPublicClient,
-                       @org.springframework.beans.factory.annotation.Value("${minio.bucket}") String bucket) {
+            UserRepository userRepo, SimpMessagingTemplate broker,
+            MinioClient minio,
+            @org.springframework.beans.factory.annotation.Qualifier("minioPublicClient") MinioClient minioPublicClient,
+            @org.springframework.beans.factory.annotation.Value("${minio.bucket}") String bucket) {
         this.convRepo = convRepo;
         this.msgRepo = msgRepo;
         this.userRepo = userRepo;
@@ -55,7 +56,8 @@ public class ChatService {
         Conversazione conv = convRepo.findById(conversazioneId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         boolean partecipa = conv.getPartecipanti().stream().anyMatch(u -> u.getId().equals(userId));
-        if (!partecipa) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!partecipa)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return msgRepo.findByConversazioneIdOrderByTimestampAsc(conversazioneId)
                 .stream().map(ChatDto.MessaggioResponse::from).toList();
     }
@@ -65,7 +67,8 @@ public class ChatService {
         Conversazione conv = convRepo.findById(conversazioneId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         boolean partecipa = conv.getPartecipanti().stream().anyMatch(u -> u.getId().equals(sender.getId()));
-        if (!partecipa) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!partecipa)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 
         Messaggio m = msgRepo.save(new Messaggio(conv, sender, testo, Instant.now()));
         ChatDto.MessaggioResponse response = ChatDto.MessaggioResponse.from(m);
@@ -73,16 +76,19 @@ public class ChatService {
         conv.getPartecipanti().stream()
                 .filter(u -> !u.getId().equals(sender.getId()))
                 .forEach(u -> broker.convertAndSend("/topic/notifiche/" + u.getId(),
-                        java.util.Map.of("tipo", "chat", "conversazioneId", conversazioneId, "messaggio", sender.getName() + ": " + testo)));
+                        java.util.Map.of("tipo", "chat", "conversazioneId", conversazioneId, "messaggio",
+                                sender.getName() + ": " + testo)));
         return response;
     }
 
     @Transactional
-    public ChatDto.MessaggioResponse inviaConAllegato(Long conversazioneId, String testo, MultipartFile file, User sender) {
+    public ChatDto.MessaggioResponse inviaConAllegato(Long conversazioneId, String testo, MultipartFile file,
+            User sender) {
         Conversazione conv = convRepo.findById(conversazioneId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         boolean partecipa = conv.getPartecipanti().stream().anyMatch(u -> u.getId().equals(sender.getId()));
-        if (!partecipa) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        if (!partecipa)
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN);
 
         String objectName = UUID.randomUUID() + "_" + file.getOriginalFilename();
         String url;

@@ -1,9 +1,18 @@
 package com.turno.chat;
 
-import com.turno.user.User;
-import jakarta.persistence.*;
-
 import java.time.Instant;
+
+import com.turno.user.User;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "messaggi")
@@ -39,7 +48,8 @@ public class Messaggio {
     @Column(nullable = false)
     private boolean eliminato = false;
 
-    public Messaggio() {}
+    public Messaggio() {
+    }
 
     public Messaggio(Conversazione conversazione, User sender, String testo, Instant timestamp) {
         this.conversazione = conversazione;
@@ -48,18 +58,59 @@ public class Messaggio {
         this.timestamp = timestamp;
     }
 
-    public Long getId() { return id; }
-    public Conversazione getConversazione() { return conversazione; }
-    public User getSender() { return sender; }
-    public String getTesto() { return testo; }
-    public String getAllegatoUrl() { return allegatoUrl; }
-    public String getAllegatoNome() { return allegatoNome; }
-    public Instant getTimestamp() { return timestamp; }
-    public boolean isModificato() { return modificato; }
-    public boolean isEliminato() { return eliminato; }
-    public void setTesto(String testo) { this.testo = testo; }
-    public void setModificato(boolean modificato) { this.modificato = modificato; }
-    public void setEliminato(boolean eliminato) { this.eliminato = eliminato; }
-    public void setAllegatoUrl(String allegatoUrl) { this.allegatoUrl = allegatoUrl; }
-    public void setAllegatoNome(String allegatoNome) { this.allegatoNome = allegatoNome; }
+    public Long getId() {
+        return id;
+    }
+
+    public Conversazione getConversazione() {
+        return conversazione;
+    }
+
+    public User getSender() {
+        return sender;
+    }
+
+    public String getTesto() {
+        return testo;
+    }
+
+    public String getAllegatoUrl() {
+        return allegatoUrl;
+    }
+
+    public String getAllegatoNome() {
+        return allegatoNome;
+    }
+
+    public Instant getTimestamp() {
+        return timestamp;
+    }
+
+    public boolean isModificato() {
+        return modificato;
+    }
+
+    public boolean isEliminato() {
+        return eliminato;
+    }
+
+    public void setTesto(String testo) {
+        this.testo = testo;
+    }
+
+    public void setModificato(boolean modificato) {
+        this.modificato = modificato;
+    }
+
+    public void setEliminato(boolean eliminato) {
+        this.eliminato = eliminato;
+    }
+
+    public void setAllegatoUrl(String allegatoUrl) {
+        this.allegatoUrl = allegatoUrl;
+    }
+
+    public void setAllegatoNome(String allegatoNome) {
+        this.allegatoNome = allegatoNome;
+    }
 }

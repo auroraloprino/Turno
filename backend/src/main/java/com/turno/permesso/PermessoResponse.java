@@ -14,8 +14,7 @@ public record PermessoResponse(
         LocalTime oraFine,
         String note,
         String certificatoUrl,
-        String stato
-) {
+        String stato) {
     public static PermessoResponse from(Permesso p) {
         return new PermessoResponse(
                 p.getId(),
@@ -28,7 +27,6 @@ public record PermessoResponse(
                 p.getOraFine(),
                 p.getNote(),
                 p.getCertificatoUrl(),
-                p.getStato().name()
-        );
+                p.getStato().name());
     }
 }

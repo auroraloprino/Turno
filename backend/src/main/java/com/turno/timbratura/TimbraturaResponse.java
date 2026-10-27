@@ -8,8 +8,7 @@ public record TimbraturaResponse(
         String userName,
         String userEmail,
         String tipo,
-        Instant timestamp
-) {
+        Instant timestamp) {
     public static TimbraturaResponse from(Timbratura t) {
         return new TimbraturaResponse(
                 t.getId(),
@@ -17,7 +16,6 @@ public record TimbraturaResponse(
                 t.getUser().getName(),
                 t.getUser().getEmail(),
                 t.getTipo().name(),
-                t.getTimestamp()
-        );
+                t.getTimestamp());
     }
 }
