@@ -30,6 +30,9 @@ public class User implements UserDetails {
     @Column(nullable = false, length = 20)
     private Role role;
 
+    @Column(length = 60)
+    private String team;
+
     public User() {}
 
     public User(Long id, String name, String email, String password, Role role) {
@@ -61,7 +64,12 @@ public class User implements UserDetails {
     public String getName()  { return name; }
     public String getEmail() { return email; }
     public Role getRole()    { return role; }
+    public String getTeam()  { return team; }
     public void setPassword(String password) { this.password = password; }
+    // stringa vuota o solo spazi = nessun team
+    public void setTeam(String team) {
+        this.team = (team == null || team.isBlank()) ? null : team.trim();
+    }
 
     @Override public String getPassword()  { return password; }
     @Override public String getUsername()  { return email; }
