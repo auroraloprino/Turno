@@ -57,9 +57,11 @@ export const useChatStore = defineStore("chat", () => {
     _activeId.value = id;
     const conv = conversazioni.value.find((c) => c.id === id);
     if (!conv) return;
-    conv.messaggi = await api.get<Messaggio[]>(
+    const msgs = await api.get<Messaggio[]>(
       `/api/chat/conversazioni/${id}/messaggi`,
     );
+    // il backend già li esclude, qui è solo una gguardai in più
+    conv.messaggi = msgs.filter((m) => !m.eliminato);
     conv.nonLetti = 0;
   }
 
