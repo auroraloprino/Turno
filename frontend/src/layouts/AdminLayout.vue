@@ -148,27 +148,29 @@
         }}</span>
       </RouterLink>
 
-      <div class="nav-section">Accesso</div>
-      <RouterLink class="nav-item" to="/admin/credenziali">
-        <svg class="nav-icon" viewBox="0 0 16 16" fill="none">
-          <rect
-            x="4"
-            y="7"
-            width="8"
-            height="6"
-            rx="1"
-            stroke="#888"
-            stroke-width="1.2"
-          />
-          <path
-            d="M5.5 7V5a2.5 2.5 0 015 0v2"
-            stroke="#888"
-            stroke-width="1.2"
-            stroke-linecap="round"
-          />
-        </svg>
-        Credenziali
-      </RouterLink>
+      <div class="sidebar-footer">
+        <div class="nav-section">Accesso</div>
+        <RouterLink class="nav-item" to="/admin/credenziali">
+          <svg class="nav-icon" viewBox="0 0 16 16" fill="none">
+            <rect
+              x="4"
+              y="7"
+              width="8"
+              height="6"
+              rx="1"
+              stroke="#888"
+              stroke-width="1.2"
+            />
+            <path
+              d="M5.5 7V5a2.5 2.5 0 015 0v2"
+              stroke="#888"
+              stroke-width="1.2"
+              stroke-linecap="round"
+            />
+          </svg>
+          Credenziali
+        </RouterLink>
+      </div>
     </aside>
 
     <div class="main">
