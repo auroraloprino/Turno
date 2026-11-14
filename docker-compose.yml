@@ -1,18 +1,75 @@
 services:
-
-  postgres:
+  postgres-auth:
     image: postgres:16
-    container_name: turno-postgres
+    container_name: turno-postgres-auth
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: authdb
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "${POSTGRES_PORT}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d authdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-timbratura:
+    image: postgres:16
+    container_name: turno-postgres-timbratura
+    environment:
+      POSTGRES_DB: timbraturadb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_timbratura_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d timbraturadb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-permessi:
+    image: postgres:16
+    container_name: turno-postgres-permessi
+    environment:
+      POSTGRES_DB: permessidb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_permessi_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d permessidb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-turni:
+    image: postgres:16
+    container_name: turno-postgres-turni
+    environment:
+      POSTGRES_DB: turnidb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_turni_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d turnidb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres-chat:
+    image: postgres:16
+    container_name: turno-postgres-chat
+    environment:
+      POSTGRES_DB: chatdb
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_chat_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d chatdb"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,7 +80,11 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
     healthcheck:
-      test: ["CMD-SHELL", "echo ruok | timeout 2 bash -c 'cat > /dev/tcp/localhost/2181' && echo imok"]
+      test:
+        [
+          "CMD-SHELL",
+          "echo ruok | timeout 2 bash -c 'cat > /dev/tcp/localhost/2181' && echo imok",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,70 +95,172 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    ports:
-      - "${KAFKA_PORT}:9092"
     depends_on:
       zookeeper:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      test:
+        [
+          "CMD-SHELL",
+          "kafka-broker-api-versions --bootstrap-server localhost:9092",
+        ]
       interval: 15s
       timeout: 10s
       retries: 5
 
-  minio:
-    image: quay.io/minio/minio:latest
-    container_name: turno-minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    ports:
-      - "${MINIO_PORT}:9000"
-      - "${MINIO_CONSOLE_PORT}:9001"
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  backend:
-    build: ./backend
-    container_name: turno-backend
+  auth-service:
+    build: ./auth-service
+    container_name: turno-auth
     env_file: .env
     environment:
-      POSTGRES_HOST: postgres
-      KAFKA_HOST: kafka
-      MINIO_HOST: minio
-      MINIO_PUBLIC_HOST: localhost
-    ports:
-      - "8080:8080"
+      POSTGRES_HOST: postgres-auth
+      POSTGRES_DB: authdb
     depends_on:
-      postgres:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      minio:
+      postgres-auth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health"]
       interval: 15s
       timeout: 5s
       retries: 8
+      start_period: 180s
+
+  timbratura-service:
+    build: ./timbratura-service
+    container_name: turno-timbratura
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres-timbratura
+      POSTGRES_DB: timbraturadb
+      KAFKA_HOST: kafka
+    depends_on:
+      postgres-timbratura:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+
+  permessi-service:
+    build: ./permessi-service
+    container_name: turno-permessi
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres-permessi
+      POSTGRES_DB: permessidb
+      KAFKA_HOST: kafka
+    depends_on:
+      postgres-permessi:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+
+  turni-service:
+    build: ./turni-service
+    container_name: turno-turni
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres-turni
+      POSTGRES_DB: turnidb
+    depends_on:
+      postgres-turni:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+
+  chat-service:
+    build: ./chat-service
+    container_name: turno-chat
+    env_file: .env
+    environment:
+      POSTGRES_HOST: postgres-chat
+      POSTGRES_DB: chatdb
+      KAFKA_HOST: kafka
+    depends_on:
+      postgres-chat:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: turno-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      AUTH_SERVICE_URL: http://auth-service:8081
+      TIMBRATURA_SERVICE_URL: http://timbratura-service:8082
+      PERMESSI_SERVICE_URL: http://permessi-service:8083
+      TURNI_SERVICE_URL: http://turni-service:8084
+      CHAT_SERVICE_URL: http://chat-service:8085
+    depends_on:
+      auth-service:
+        condition: service_healthy
+      timbratura-service:
+        condition: service_healthy
+      permessi-service:
+        condition: service_healthy
+      turni-service:
+        condition: service_healthy
+      chat-service:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
     container_name: turno-frontend
     ports:
-      - "80:80"
+      - "80:3000"
     depends_on:
-      backend:
+      - api-gateway
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget -q --spider http://127.0.0.1:3000/ && ! wget -S -O /dev/null http://127.0.0.1:3000/api/auth/login 2>&1 | grep -q ' 502 '",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  ready:
+    image: nginx:1.27-alpine
+    container_name: turno-ready
+    depends_on:
+      frontend:
         condition: service_healthy
+    restart: "no"
+    command:
+      - sh
+      - -c
+      - |
+        printf ' Turno è pronto su locale:  http://localhost\n'
+        printf ' Per testing: owner@turno.test/ Owner1234!\n'
 
 volumes:
-  postgres_data:
-  minio_data:
+  postgres_auth_data:
+  postgres_timbratura_data:
+  postgres_permessi_data:
+  postgres_turni_data:
+  postgres_chat_data:
