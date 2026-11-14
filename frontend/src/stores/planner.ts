@@ -5,11 +5,20 @@ import { api } from "@/api";
 export interface Shift {
   id: number;
   userId: number;
-  userName: string;
+  userName?: string;
   data: string;
   inizio: string;
   fine: string;
 }
+
+export interface NewShift {
+  userId: number;
+  data: string;
+  inizio: string;
+  fine: string;
+}
+
+export const hhmm = (t: string) => t.slice(0, 5);
 
 export const DAYS = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"] as const;
 
@@ -44,7 +53,16 @@ export const usePlannerStore = defineStore("planner", () => {
     shifts.value = shifts.value.filter((s) => s.id !== shiftId);
   }
 
-  return { shifts, getShifts, carica, addShift, removeShift };
+  async function addMany(list: NewShift[]) {
+    const res = await api.post<{ creati: Shift[]; saltati: number }>(
+      "/api/turni/batch",
+      list,
+    );
+    shifts.value.push(...res.creati);
+    return res;
+  }
+
+  return { shifts, getShifts, carica, addShift, addMany, removeShift };
 });
 
 export function toDateKey(d: Date): string {
@@ -63,6 +81,24 @@ export function weekDates(offset: number): Date[] {
     day.setDate(d.getDate() + i);
     return day;
   });
+}
+
+// new Date("2026-11-16") verrebbe letto come UTC e in alcuni fusi orari slitterebbe di un giorno
+export function fromDateKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+export function weekOffsetOf(date: Date): number {
+  const monday = (d: Date) => {
+    const m = new Date(d);
+    m.setHours(0, 0, 0, 0);
+    m.setDate(m.getDate() - ((m.getDay() + 6) % 7));
+    return m;
+  };
+  const diffDays =
+    (monday(date).getTime() - monday(new Date()).getTime()) / 86_400_000;
+  return Math.round(diffDays / 7);
 }
 
 export function monthDates(offset: number): Date[] {

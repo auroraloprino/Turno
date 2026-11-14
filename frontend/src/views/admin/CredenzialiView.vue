@@ -1,5 +1,5 @@
 <template>
-  <div class="two-col">
+  <div class="credenziali-grid">
     <div v-if="isOwner" class="card">
       <div class="card-title">Nuovo account</div>
       <div class="perm-form">
@@ -21,6 +21,15 @@
             <option value="ADMIN">Admin</option>
             <option value="USER">Utente</option>
           </select>
+        </div>
+        <div class="fg">
+          <label>Team (opzionale)</label>
+          <input
+            v-model="form.team"
+            type="text"
+            maxlength="60"
+            placeholder="es. Dev, Testing..."
+          />
         </div>
         <span v-if="createError" class="errore">{{ createError }}</span>
         <span v-if="createOk" class="ok">Account creato.</span>
@@ -53,7 +62,11 @@
       </div>
     </div>
 
-    <div v-if="isOwner || auth.role === 'ADMIN'" class="card">
+    <div
+      v-if="isOwner || auth.role === 'ADMIN'"
+      class="card"
+      :class="{ 'span-full': isOwner }"
+    >
       <div class="card-title">
         {{ isOwner ? "Account esistenti" : "Utenti" }}
       </div>
@@ -96,7 +109,7 @@ interface UserResponse {
 const auth = useAuthStore();
 const isOwner = computed(() => auth.role === "OWNER");
 
-const form = ref({ name: "", email: "", password: "", role: "USER" });
+const form = ref({ name: "", email: "", password: "", role: "USER", team: "" });
 const createError = ref("");
 const createOk = ref(false);
 const createLoading = ref(false);
@@ -128,7 +141,7 @@ async function crea() {
   try {
     const created = await api.post<UserResponse>("/api/users", form.value);
     utenti.value.push(created);
-    form.value = { name: "", email: "", password: "", role: "USER" };
+    form.value = { name: "", email: "", password: "", role: "USER", team: "" };
     createOk.value = true;
   } catch (e: unknown) {
     createError.value =
@@ -192,6 +205,23 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.credenziali-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.credenziali-grid > .card {
+  margin-bottom: 0;
+}
+.span-full {
+  grid-column: 1 / -1;
+}
+@media (max-width: 900px) {
+  .credenziali-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .empty-state {
   font-size: 13px;
   color: var(--text-tertiary);
