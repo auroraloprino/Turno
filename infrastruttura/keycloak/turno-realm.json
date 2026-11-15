@@ -1,0 +1,68 @@
+{
+  "realm": "turno",
+  "enabled": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "registrationAllowed": false,
+  "accessTokenLifespan": 86400,
+  "ssoSessionIdleTimeout": 86400,
+  "ssoSessionMaxLifespan": 86400,
+  "roles": {
+    "realm": [
+      {
+        "name": "OWNER",
+        "description": "Titolare, gestisce tutti gli account"
+      },
+      {
+        "name": "ADMIN",
+        "description": "Responsabile, gestisce turni e permessi"
+      },
+      { "name": "USER", "description": "Dipendente" },
+      { "name": "SERVICE", "description": "Chiamate tra microservizi" }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "turno-app",
+      "name": "Turno frontend",
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "turno-auth",
+      "name": "auth-service",
+      "publicClient": false,
+      "secret": "${TURNO_AUTH_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    },
+    {
+      "clientId": "turno-orchestratore",
+      "name": "orchestratore-service",
+      "publicClient": false,
+      "secret": "${TURNO_ORCHESTRATORE_CLIENT_SECRET}",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-turno-auth",
+      "enabled": true,
+      "serviceAccountClientId": "turno-auth",
+      "clientRoles": {
+        "realm-management": ["manage-users", "view-users", "view-realm"]
+      }
+    },
+    {
+      "username": "service-account-turno-orchestratore",
+      "enabled": true,
+      "serviceAccountClientId": "turno-orchestratore",
+      "realmRoles": ["SERVICE"]
+    }
+  ]
+}

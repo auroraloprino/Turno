@@ -1,0 +1,35 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:authdb}
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
+        max.block.ms: 10000
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8180}
+  realm: turno
+  client-id: turno-auth
+  client-secret: ${TURNO_AUTH_CLIENT_SECRET}
+
+app:
+  owner:
+    email: ${OWNER_EMAIL}
+    password: ${OWNER_PASSWORD}
+
+server:
+  port: 8081
+
+springdoc:
+  api-docs:
+    path: /api/auth/v3/api-docs
+  swagger-ui:
+    path: /api/auth/swagger-ui.html

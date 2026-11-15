@@ -1,0 +1,19 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:turnidb}
+      auto-index-creation: true
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8180}
+  realm: turno
+
+server:
+  port: 8084
+
+springdoc:
+  api-docs:
+    path: /api/turni/v3/api-docs
+  swagger-ui:
+    path: /api/turni/swagger-ui.html

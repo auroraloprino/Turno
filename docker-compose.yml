@@ -1,84 +1,28 @@
+x-servizio-java: &servizio-java
+  env_file: .env
+  volumes:
+    - certs:/certs:ro
+
+x-truststore: &truststore >-
+  -Djavax.net.ssl.trustStore=/certs/truststore.p12
+  -Djavax.net.ssl.trustStorePassword=changeit
+  -Djavax.net.ssl.trustStoreType=PKCS12
+
 services:
-  postgres-auth:
-    image: postgres:16
-    container_name: turno-postgres-auth
-    environment:
-      POSTGRES_DB: authdb
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  certs-init:
+    build: ./infrastruttura/certs
+    container_name: turno-certs-init
     volumes:
-      - postgres_auth_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d authdb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-timbratura:
-    image: postgres:16
-    container_name: turno-postgres-timbratura
-    environment:
-      POSTGRES_DB: timbraturadb
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_timbratura_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d timbraturadb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-permessi:
-    image: postgres:16
-    container_name: turno-postgres-permessi
-    environment:
-      POSTGRES_DB: permessidb
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_permessi_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d permessidb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-turni:
-    image: postgres:16
-    container_name: turno-postgres-turni
-    environment:
-      POSTGRES_DB: turnidb
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_turni_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d turnidb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  postgres-chat:
-    image: postgres:16
-    container_name: turno-postgres-chat
-    environment:
-      POSTGRES_DB: chatdb
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_chat_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d chatdb"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - certs:/certs
+    network_mode: none
+    restart: "no"
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
     container_name: turno-zookeeper
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
+    networks: [kafka-net]
     healthcheck:
       test:
         [
@@ -97,6 +41,7 @@ services:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks: [kafka-net]
     depends_on:
       zookeeper:
         condition: service_healthy
@@ -110,111 +55,222 @@ services:
       timeout: 10s
       retries: 5
 
-  auth-service:
-    build: ./auth-service
-    container_name: turno-auth
-    env_file: .env
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.4
+    container_name: turno-keycloak
+    command: start-dev --import-realm
     environment:
-      POSTGRES_HOST: postgres-auth
-      POSTGRES_DB: authdb
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?manca KEYCLOAK_ADMIN_PASSWORD nel file .env}
+      KC_HTTP_ENABLED: "false"
+      KC_HTTPS_CERTIFICATE_FILE: /certs/keycloak.crt
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /certs/keycloak.key
+      TURNO_AUTH_CLIENT_SECRET: ${TURNO_AUTH_CLIENT_SECRET:?manca TURNO_AUTH_CLIENT_SECRET nel file .env}
+      TURNO_ORCHESTRATORE_CLIENT_SECRET: ${TURNO_ORCHESTRATORE_CLIENT_SECRET:?manca TURNO_ORCHESTRATORE_CLIENT_SECRET nel file .env}
+    ports:
+      - "8180:8443"
+    volumes:
+      - ./infrastruttura/keycloak:/opt/keycloak/data/import:ro
+      - keycloak_data:/opt/keycloak/data
+      - certs:/certs:ro
+    networks: [keycloak-net]
     depends_on:
-      postgres-auth:
+      certs-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8443"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+
+  auth-service:
+    <<: *servizio-java
+    build: ./backend/auth-service
+    container_name: turno-auth
+    environment:
+      MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
+      MONGODB_DATABASE: authdb
+      KEYCLOAK_URL: https://keycloak:8443
+      KAFKA_HOST: kafka
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /certs/auth-service.crt
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /certs/auth-service.key
+      JAVA_TOOL_OPTIONS: *truststore
+    networks: [apigw-backend-net, keycloak-net, kafka-net]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8081/actuator/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --cacert /certs/ca.crt https://localhost:8081/actuator/health",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
       start_period: 180s
 
   timbratura-service:
-    build: ./timbratura-service
+    <<: *servizio-java
+    build: ./backend/timbratura-service
     container_name: turno-timbratura
-    env_file: .env
     environment:
-      POSTGRES_HOST: postgres-timbratura
-      POSTGRES_DB: timbraturadb
-      KAFKA_HOST: kafka
+      MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
+      MONGODB_DATABASE: timbraturadb
+      KEYCLOAK_URL: https://keycloak:8443
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /certs/timbratura-service.crt
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /certs/timbratura-service.key
+      JAVA_TOOL_OPTIONS: *truststore
+    networks: [apigw-backend-net, servizi-net, keycloak-net]
     depends_on:
-      postgres-timbratura:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
+      certs-init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8082/actuator/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --cacert /certs/ca.crt https://localhost:8082/actuator/health",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
       start_period: 180s
 
   permessi-service:
-    build: ./permessi-service
+    <<: *servizio-java
+    build: ./backend/permessi-service
     container_name: turno-permessi
-    env_file: .env
     environment:
-      POSTGRES_HOST: postgres-permessi
-      POSTGRES_DB: permessidb
+      MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
+      MONGODB_DATABASE: permessidb
+      KEYCLOAK_URL: https://keycloak:8443
       KAFKA_HOST: kafka
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /certs/permessi-service.crt
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /certs/permessi-service.key
+      JAVA_TOOL_OPTIONS: *truststore
+    networks: [apigw-backend-net, servizi-net, keycloak-net, kafka-net]
     depends_on:
-      postgres-permessi:
-        condition: service_healthy
+      certs-init:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8083/actuator/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --cacert /certs/ca.crt https://localhost:8083/actuator/health",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
       start_period: 180s
 
   turni-service:
-    build: ./turni-service
+    <<: *servizio-java
+    build: ./backend/turni-service
     container_name: turno-turni
-    env_file: .env
     environment:
-      POSTGRES_HOST: postgres-turni
-      POSTGRES_DB: turnidb
+      MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
+      MONGODB_DATABASE: turnidb
+      KEYCLOAK_URL: https://keycloak:8443
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /certs/turni-service.crt
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /certs/turni-service.key
+      JAVA_TOOL_OPTIONS: *truststore
+    networks: [apigw-backend-net, servizi-net, keycloak-net]
     depends_on:
-      postgres-turni:
-        condition: service_healthy
+      certs-init:
+        condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8084/actuator/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --cacert /certs/ca.crt https://localhost:8084/actuator/health",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
       start_period: 180s
 
   chat-service:
-    build: ./chat-service
+    <<: *servizio-java
+    build: ./backend/chat-service
     container_name: turno-chat
-    env_file: .env
     environment:
-      POSTGRES_HOST: postgres-chat
-      POSTGRES_DB: chatdb
+      MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
+      MONGODB_DATABASE: chatdb
+      KEYCLOAK_URL: https://keycloak:8443
       KAFKA_HOST: kafka
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /certs/chat-service.crt
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /certs/chat-service.key
+      JAVA_TOOL_OPTIONS: *truststore
+    networks: [apigw-backend-net, servizi-net, keycloak-net, kafka-net]
     depends_on:
-      postgres-chat:
-        condition: service_healthy
+      certs-init:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8085/actuator/health"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --cacert /certs/ca.crt https://localhost:8085/actuator/health",
+        ]
       interval: 15s
       timeout: 5s
       retries: 8
       start_period: 180s
 
-  api-gateway:
-    build: ./api-gateway
-    container_name: turno-gateway
-    ports:
-      - "8080:8080"
+  orchestratore-service:
+    build: ./backend/orchestratore-service
+    container_name: turno-orchestratore
+    volumes:
+      - certs:/certs:ro
     environment:
-      AUTH_SERVICE_URL: http://auth-service:8081
-      TIMBRATURA_SERVICE_URL: http://timbratura-service:8082
-      PERMESSI_SERVICE_URL: http://permessi-service:8083
-      TURNI_SERVICE_URL: http://turni-service:8084
-      CHAT_SERVICE_URL: http://chat-service:8085
+      KEYCLOAK_URL: https://keycloak:8443
+      TURNO_ORCHESTRATORE_CLIENT_SECRET: ${TURNO_ORCHESTRATORE_CLIENT_SECRET:?manca TURNO_ORCHESTRATORE_CLIENT_SECRET nel file .env}
+      KAFKA_HOST: kafka
+      TURNI_SERVICE_URL: https://turni-service:8084
+      PERMESSI_SERVICE_URL: https://permessi-service:8083
+      TIMBRATURA_SERVICE_URL: https://timbratura-service:8082
+      CHAT_SERVICE_URL: https://chat-service:8085
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /certs/orchestratore-service.crt
+      SERVER_SSL_CERTIFICATE_PRIVATE_KEY: /certs/orchestratore-service.key
+      JAVA_TOOL_OPTIONS: *truststore
+    networks: [servizi-net, keycloak-net, kafka-net]
+    depends_on:
+      kafka:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -f --cacert /certs/ca.crt https://localhost:8086/actuator/health",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 180s
+
+  frontend:
+    build: ./frontend
+    container_name: turno-frontend
+    ports:
+      - "80:3000"
+      - "443:3443"
+    volumes:
+      - certs:/certs:ro
+    networks: [apigw-backend-net]
     depends_on:
       auth-service:
         condition: service_healthy
@@ -226,27 +282,22 @@ services:
         condition: service_healthy
       chat-service:
         condition: service_healthy
-
-  frontend:
-    build: ./frontend
-    container_name: turno-frontend
-    ports:
-      - "80:3000"
-    depends_on:
-      - api-gateway
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "wget -q --spider http://127.0.0.1:3000/ && ! wget -S -O /dev/null http://127.0.0.1:3000/api/auth/login 2>&1 | grep -q ' 502 '",
+          "curl -fs --cacert /certs/ca.crt https://localhost:3443/ > /dev/null && ! curl -s -o /dev/null -w '%{http_code}' --cacert /certs/ca.crt https://localhost:3443/api/auth/login | grep -q 502",
         ]
-      interval: 5s
+      interval: 5m
       timeout: 5s
-      retries: 30
+      retries: 3
+      start_period: 5m
+      start_interval: 5s
 
   ready:
     image: nginx:1.27-alpine
     container_name: turno-ready
+    network_mode: none
     depends_on:
       frontend:
         condition: service_healthy
@@ -255,12 +306,19 @@ services:
       - sh
       - -c
       - |
-        printf ' Turno è pronto su locale:  http://localhost\n'
+        printf ' Turno è pronto su locale:  https://localhost\n'
         printf ' Per testing: owner@turno.test/ Owner1234!\n'
 
 volumes:
-  postgres_auth_data:
-  postgres_timbratura_data:
-  postgres_permessi_data:
-  postgres_turni_data:
-  postgres_chat_data:
+  keycloak_data:
+  certs:
+
+networks:
+  apigw-backend-net:
+    name: turno-apigw-backend-net
+  servizi-net:
+    name: turno-servizi-net
+  kafka-net:
+    name: turno-kafka-net
+  keycloak-net:
+    name: turno-keycloak-net
