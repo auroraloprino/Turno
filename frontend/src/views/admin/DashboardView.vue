@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { api } from "@/api";
+import { conNomi } from "@/composables/useUtenti";
 import { toDateKey, weekDates } from "@/stores/planner";
 
 interface UserResponse {
@@ -98,12 +99,14 @@ interface UserResponse {
 }
 interface TimbraturaResponse {
   id: number;
+  userId: number;
   userName: string;
   tipo: string;
   timestamp: string;
 }
 interface PermessoResponse {
   id: number;
+  userId: number;
   userName: string;
   tipo: string;
   dal: string;
@@ -111,6 +114,7 @@ interface PermessoResponse {
 }
 interface TurnoResponse {
   id: number;
+  userId: number;
   userName: string;
   data: string;
   inizio: string;
@@ -154,8 +158,8 @@ let timer: ReturnType<typeof setInterval>;
 async function fetchLive() {
   const oggi = toDateKey(new Date());
   const [t, p] = await Promise.all([
-    api.get<TimbraturaResponse[]>("/api/timbrature"),
-    api.get<PermessoResponse[]>("/api/permessi/in-attesa"),
+    api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista)),
+    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((lista) => conNomi(lista)),
   ]);
   timbratureOggi.value = t.filter((x) => x.timestamp.startsWith(oggi));
   permessiAttesa.value = p;
@@ -169,9 +173,9 @@ onMounted(async () => {
 
   const [u, t, p, turni] = await Promise.all([
     api.get<UserResponse[]>("/api/users"),
-    api.get<TimbraturaResponse[]>("/api/timbrature"),
-    api.get<PermessoResponse[]>("/api/permessi/in-attesa"),
-    api.get<TurnoResponse[]>(`/api/turni?dal=${dal}&al=${al}`),
+    api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista)),
+    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((lista) => conNomi(lista)),
+    api.get<TurnoResponse[]>(`/api/turni?dal=${dal}&al=${al}`).then((lista) => conNomi(lista)),
   ]);
 
   utenti.value = u;
