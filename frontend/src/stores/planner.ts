@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import { api } from "@/api";
+import { conNomi } from "@/composables/useUtenti";
 
 export interface Shift {
   id: number;
@@ -30,7 +31,7 @@ export const usePlannerStore = defineStore("planner", () => {
   }
 
   async function carica(dal: string, al: string) {
-    shifts.value = await api.get<Shift[]>(`/api/turni?dal=${dal}&al=${al}`);
+    shifts.value = await api.get<Shift[]>(`/api/turni?dal=${dal}&al=${al}`).then((lista) => conNomi(lista));
   }
 
   async function addShift(
