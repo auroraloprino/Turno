@@ -196,20 +196,7 @@
                     </div>
                   </template>
                   <template v-else>
-                    <a
-                      v-if="row.msg.allegatoUrl"
-                      :href="row.msg.allegatoUrl"
-                      target="_blank"
-                      rel="noopener"
-                      class="file"
-                      >📎 {{ row.msg.allegatoNome }}</a
-                    >
-                    <div
-                      v-if="
-                        row.msg.testo && row.msg.testo !== row.msg.allegatoNome
-                      "
-                      class="text"
-                    >
+                    <div v-if="row.msg.testo" class="text">
                       <span class="md" v-html="renderMd(row.msg.testo)" />
                       <span v-if="row.msg.modificato" class="edited"
                         >(modificato)</span
@@ -937,12 +924,6 @@ onUnmounted(() => store.setActive(null));
   color: var(--text-tertiary);
   margin-left: 4px;
 }
-.file {
-  display: inline-block;
-  margin: 4px 0;
-  color: var(--purple-dark);
-}
-
 .md :deep(p) {
   display: inline;
 }

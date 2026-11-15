@@ -11,8 +11,6 @@ export interface Messaggio {
   senderId: number;
   senderName: string;
   testo: string;
-  allegatoUrl: string | null;
-  allegatoNome: string | null;
   timestamp: string;
   modificato: boolean;
   eliminato: boolean;
