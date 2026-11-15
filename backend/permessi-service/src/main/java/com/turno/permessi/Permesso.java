@@ -7,7 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.turno.permessi.mongo.ConIdNumerico;
+import com.turno.common.mongo.ConIdNumerico;
 
 @Document(collection = "permessi")
 public class Permesso implements ConIdNumerico {

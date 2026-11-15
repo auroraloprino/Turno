@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.turno.timbratura.mongo.ConIdNumerico;
+import com.turno.common.mongo.ConIdNumerico;
 
 @Document(collection = "timbrature")
 // copre sia lo storico di un utente sia la ricerca dell'ultima timbratura

@@ -4,6 +4,7 @@ import com.turno.auth.user.dto.ChangePasswordRequest;
 import com.turno.auth.user.dto.CreateUserRequest;
 import com.turno.auth.user.dto.UpdateTeamRequest;
 import com.turno.auth.user.dto.UserResponse;
+import com.turno.common.security.AuthUser;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -46,7 +47,7 @@ public class UserController {
     public ResponseEntity<Void> changePassword(
             @PathVariable Long id,
             @Valid @RequestBody ChangePasswordRequest request,
-            @AuthenticationPrincipal User caller) {
+            @AuthenticationPrincipal AuthUser caller) {
         userService.changePassword(id, request, caller);
         return ResponseEntity.noContent().build();
     }
@@ -55,7 +56,7 @@ public class UserController {
     @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
-            @AuthenticationPrincipal User caller) {
+            @AuthenticationPrincipal AuthUser caller) {
         userService.delete(id, caller);
         return ResponseEntity.noContent().build();
     }

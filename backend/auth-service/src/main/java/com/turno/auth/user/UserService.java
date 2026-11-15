@@ -10,7 +10,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.turno.auth.keycloak.KeycloakClient;
-import com.turno.auth.outbox.Outbox;
+import com.turno.common.outbox.Outbox;
+import com.turno.common.security.AuthUser;
 import com.turno.auth.user.dto.ChangePasswordRequest;
 import com.turno.auth.user.dto.CreateUserRequest;
 import com.turno.auth.user.dto.UserResponse;
@@ -60,9 +61,10 @@ public class UserService {
         return userRepository.findAll().stream().map(UserResponse::from).toList();
     }
 
-    public void changePassword(Long userId, ChangePasswordRequest request, User caller) {
-        if (!caller.getId().equals(userId))
+    public void changePassword(Long userId, ChangePasswordRequest request, AuthUser chiamante) {
+        if (!chiamante.getId().equals(userId))
             throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        User caller = profilo(chiamante);
         // la password attuale la verifico facendo un login vero su Keycloak
         try {
             keycloak.login(caller.getEmail(), request.currentPassword());
@@ -72,7 +74,8 @@ public class UserService {
         keycloak.impostaPassword(caller.getKeycloakId(), request.newPassword());
     }
 
-    public void delete(Long targetId, User caller) {
+    public void delete(Long targetId, AuthUser chiamante) {
+        User caller = profilo(chiamante);
         User target = userRepository.findById(targetId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         if (caller.getRole() == Role.ADMIN && target.getRole() != Role.USER)
@@ -87,5 +90,11 @@ public class UserService {
         // Keycloak è fuori dalla transazione, se fallisse l'utente non potrebbe comunque più entrare perché manca su Mongo
         if (target.getKeycloakId() != null)
             keycloak.eliminaUtente(target.getKeycloakId());
+    }
+
+    // dal token arriva solo l'id, il profilo completo con keycloakId lo prendo da Mongo
+    private User profilo(AuthUser chiamante) {
+        return userRepository.findById(chiamante.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
 }

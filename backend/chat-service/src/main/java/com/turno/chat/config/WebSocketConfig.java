@@ -14,8 +14,8 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-import com.turno.chat.security.AuthUser;
-import com.turno.chat.security.JwtService;
+import com.turno.common.security.AuthUser;
+import com.turno.common.security.JwtService;
 
 @Configuration
 @EnableWebSocketMessageBroker

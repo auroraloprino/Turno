@@ -2,7 +2,7 @@ package com.turno.permessi.kafka;
 
 import org.springframework.stereotype.Component;
 
-import com.turno.permessi.outbox.Outbox;
+import com.turno.common.outbox.Outbox;
 
 @Component
 public class PermessoEventProducer {

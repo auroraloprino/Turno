@@ -1,0 +1,5 @@
+com.turno.common.mongo.MongoAutoConfiguration
+com.turno.common.security.SicurezzaAutoConfiguration
+com.turno.common.openapi.OpenApiAutoConfiguration
+com.turno.common.errori.ErroriAutoConfiguration
+com.turno.common.outbox.OutboxAutoConfiguration

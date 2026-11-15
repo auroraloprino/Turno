@@ -6,7 +6,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.turno.chat.mongo.ConIdNumerico;
+import com.turno.common.mongo.ConIdNumerico;
 
 @Document(collection = "messaggi")
 @CompoundIndex(def = "{ 'conversazioneId': 1, 'timestamp': 1 }")

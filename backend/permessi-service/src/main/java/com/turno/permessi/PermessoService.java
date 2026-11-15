@@ -10,7 +10,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.turno.permessi.certificati.CertificatiService;
 import com.turno.permessi.kafka.PermessoEventProducer;
 import com.turno.permessi.kafka.PermessoStatoEvent;
-import com.turno.permessi.security.AuthUser;
+import com.turno.common.security.AuthUser;
 
 @Service
 public class PermessoService {

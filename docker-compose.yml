@@ -52,7 +52,7 @@ services:
           "kafka-broker-api-versions --bootstrap-server localhost:9092",
         ]
       interval: 15s
-      timeout: 10s
+      timeout: 30s
       retries: 5
 
   keycloak:
@@ -86,7 +86,9 @@ services:
 
   auth-service:
     <<: *servizio-java
-    build: ./backend/auth-service
+    build:
+      context: ./backend
+      dockerfile: auth-service/Dockerfile
     container_name: turno-auth
     environment:
       MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
@@ -116,7 +118,9 @@ services:
 
   timbratura-service:
     <<: *servizio-java
-    build: ./backend/timbratura-service
+    build:
+      context: ./backend
+      dockerfile: timbratura-service/Dockerfile
     container_name: turno-timbratura
     environment:
       MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
@@ -143,7 +147,9 @@ services:
 
   permessi-service:
     <<: *servizio-java
-    build: ./backend/permessi-service
+    build:
+      context: ./backend
+      dockerfile: permessi-service/Dockerfile
     container_name: turno-permessi
     environment:
       MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
@@ -173,7 +179,9 @@ services:
 
   turni-service:
     <<: *servizio-java
-    build: ./backend/turni-service
+    build:
+      context: ./backend
+      dockerfile: turni-service/Dockerfile
     container_name: turno-turni
     environment:
       MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
@@ -200,7 +208,9 @@ services:
 
   chat-service:
     <<: *servizio-java
-    build: ./backend/chat-service
+    build:
+      context: ./backend
+      dockerfile: chat-service/Dockerfile
     container_name: turno-chat
     environment:
       MONGODB_URI: ${MONGODB_URI:?manca MONGODB_URI nel file .env}
@@ -229,7 +239,9 @@ services:
       start_period: 180s
 
   orchestratore-service:
-    build: ./backend/orchestratore-service
+    build:
+      context: ./backend
+      dockerfile: orchestratore-service/Dockerfile
     container_name: turno-orchestratore
     volumes:
       - certs:/certs:ro

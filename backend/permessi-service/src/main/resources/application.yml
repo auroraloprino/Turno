@@ -30,3 +30,14 @@ springdoc:
     path: /api/permessi/v3/api-docs
   swagger-ui:
     path: /api/permessi/swagger-ui.html
+
+turno:
+  sicurezza:
+    percorsi-pubblici:
+      - "/api/permessi/v3/api-docs/**"
+      - "/api/permessi/swagger-ui/**"
+      - "/api/permessi/swagger-ui.html"
+  openapi:
+    titolo: Permessi
+  outbox:
+    abilitato: true

@@ -29,3 +29,13 @@ springdoc:
     path: /api/chat/v3/api-docs
   swagger-ui:
     path: /api/chat/swagger-ui.html
+
+turno:
+  sicurezza:
+    percorsi-pubblici:
+      - "/ws/**"
+      - "/api/chat/v3/api-docs/**"
+      - "/api/chat/swagger-ui/**"
+      - "/api/chat/swagger-ui.html"
+  openapi:
+    titolo: Chat

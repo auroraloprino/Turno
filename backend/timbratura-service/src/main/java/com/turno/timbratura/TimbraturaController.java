@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.turno.timbratura.security.AuthUser;
+import com.turno.common.security.AuthUser;
 
 @RestController
 @RequestMapping("/api/timbrature")

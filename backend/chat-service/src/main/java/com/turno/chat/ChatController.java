@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.turno.chat.security.AuthUser;
+import com.turno.common.security.AuthUser;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

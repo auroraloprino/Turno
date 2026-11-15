@@ -7,7 +7,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import com.turno.turni.mongo.ConIdNumerico;
+import com.turno.common.mongo.ConIdNumerico;
 
 @Document(collection = "turni")
 @CompoundIndex(def = "{ 'data': 1, 'inizio': 1 }")

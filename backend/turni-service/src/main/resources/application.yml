@@ -17,3 +17,12 @@ springdoc:
     path: /api/turni/v3/api-docs
   swagger-ui:
     path: /api/turni/swagger-ui.html
+
+turno:
+  sicurezza:
+    percorsi-pubblici:
+      - "/api/turni/v3/api-docs/**"
+      - "/api/turni/swagger-ui/**"
+      - "/api/turni/swagger-ui.html"
+  openapi:
+    titolo: Turni

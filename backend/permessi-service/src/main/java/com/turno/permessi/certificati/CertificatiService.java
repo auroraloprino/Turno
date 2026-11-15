@@ -15,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.mongodb.client.gridfs.model.GridFSFile;
-import com.turno.permessi.security.AuthUser;
+import com.turno.common.security.AuthUser;
 
 @Service
 public class CertificatiService {

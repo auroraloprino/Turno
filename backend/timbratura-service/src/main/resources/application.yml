@@ -17,3 +17,12 @@ springdoc:
     path: /api/timbrature/v3/api-docs
   swagger-ui:
     path: /api/timbrature/swagger-ui.html
+
+turno:
+  sicurezza:
+    percorsi-pubblici:
+      - "/api/timbrature/v3/api-docs/**"
+      - "/api/timbrature/swagger-ui/**"
+      - "/api/timbrature/swagger-ui.html"
+  openapi:
+    titolo: Timbrature

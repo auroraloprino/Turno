@@ -11,7 +11,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.turno.chat.security.AuthUser;
+import com.turno.common.security.AuthUser;
 
 @Service
 public class ChatService {
