@@ -1,0 +1,31 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:chatdb}
+      auto-index-creation: true
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    consumer:
+      group-id: chat-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JsonDeserializer
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.turno.chat.kafka.PermessoStatoEvent
+        spring.json.trusted.packages: "com.turno.chat.kafka"
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8180}
+  realm: turno
+
+server:
+  port: 8085
+
+springdoc:
+  api-docs:
+    path: /api/chat/v3/api-docs
+  swagger-ui:
+    path: /api/chat/swagger-ui.html

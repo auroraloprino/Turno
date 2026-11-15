@@ -1,0 +1,32 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE:permessidb}
+      auto-index-creation: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 5000
+        max.block.ms: 10000
+
+keycloak:
+  url: ${KEYCLOAK_URL:http://localhost:8180}
+  realm: turno
+
+server:
+  port: 8083
+
+springdoc:
+  api-docs:
+    path: /api/permessi/v3/api-docs
+  swagger-ui:
+    path: /api/permessi/swagger-ui.html
