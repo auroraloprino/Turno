@@ -8,7 +8,7 @@ public class ChatDto {
     public record MessaggioResponse(
             Long id, Long conversazioneId,
             Long senderId, String senderName,
-            String testo,
+            String testo, String immagineUrl,
             Instant timestamp, boolean modificato, boolean eliminato) {
 
         public static MessaggioResponse from(Messaggio m) {
@@ -16,6 +16,7 @@ public class ChatDto {
                     m.getId(), m.getConversazioneId(),
                     m.getSenderId(), m.getSenderName(),
                     m.getTesto(),
+                    m.getImmagineId() != null ? "/api/chat/immagini/" + m.getImmagineId() : null,
                     m.getTimestamp(), m.isModificato(), m.isEliminato());
         }
     }

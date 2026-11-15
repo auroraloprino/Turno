@@ -42,9 +42,10 @@ export const api = {
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
-  upload: async <T>(path: string, file: File): Promise<T> => {
+  upload: async <T>(path: string, file: File, campi: Record<string, string> = {}): Promise<T> => {
     const form = new FormData();
     form.append("file", file);
+    for (const [k, v] of Object.entries(campi)) form.append(k, v);
     return (await send(path, { method: "POST", body: form }, false)).json();
   },
   // un semplice <a href> non manderebbe il token, quindi scarico il file e lo apro da un blob

@@ -1,198 +1,228 @@
 <template>
-  <div class="stats-row">
-    <div class="stat">
-      <div class="stat-label">Utenti</div>
-      <div class="stat-val">{{ utenti.length }}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Timbrature oggi</div>
-      <div class="stat-val">{{ timbratureOggi.length }}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Permessi in attesa</div>
-      <div class="stat-val">{{ permessiAttesa.length }}</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Turni questa settimana</div>
-      <div class="stat-val">{{ turniSettimana.length }}</div>
-    </div>
-  </div>
-
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">Utenti</div>
-      <div v-if="utenti.length === 0" class="empty-state">Nessun utente.</div>
-      <div v-for="u in utenti" :key="u.id" class="user-row">
-        <div class="avatar">{{ initials(u.name) }}</div>
-        <div class="user-info">
-          <div class="user-name">{{ u.name }}</div>
-          <div class="user-role">{{ u.email }}</div>
-        </div>
-        <span class="pill pill-online">{{ u.role }}</span>
+  <div class="dash-grid">
+    <RouterLink
+      v-for="t in riquadri"
+      :key="t.titolo"
+      :to="t.to"
+      class="dash-tile"
+      :class="[t.colore, { evidenza: t.evidenza }]"
+    >
+      <div class="dash-top">
+        <span class="dash-icon" v-html="t.icona" />
+        <span class="dash-arrow">→</span>
       </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Timbrature oggi</div>
-      <div v-if="timbratureOggi.length === 0" class="empty-state">
-        Nessuna timbratura oggi.
+      <div class="dash-title">{{ t.titolo }}</div>
+      <div class="dash-num">
+        <span v-if="caricato">{{ t.valore }}</span>
+        <span v-else class="dash-skeleton" />
       </div>
-      <div v-for="t in timbratureOggi" :key="t.id" class="timb-row">
-        <span class="timb-name">{{ t.userName }}</span>
-        <span class="timb-time">{{ fmtTime(t.timestamp) }}</span>
-        <span
-          class="timb-status"
-          :class="t.tipo === 'ENTRATA' ? 'ts-in' : 'ts-out'"
-          >{{ t.tipo }}</span
-        >
-      </div>
-    </div>
-  </div>
-
-  <div class="two-col">
-    <div class="card">
-      <div class="card-title">Permessi in attesa</div>
-      <div v-if="permessiAttesa.length === 0" class="empty-state">
-        Nessuna richiesta in attesa.
-      </div>
-      <div v-for="p in permessiAttesa" :key="p.id" class="perm-row">
-        <div>
-          <div class="perm-info">{{ p.userName }} - {{ p.tipo }}</div>
-          <div class="perm-date">{{ fmt(p.dal) }}</div>
-        </div>
-        <div class="perm-actions">
-          <button class="btn-sm btn-ok" @click="aggiorna(p.id, 'APPROVATO')">
-            Approva
-          </button>
-          <button class="btn-sm btn-no" @click="aggiorna(p.id, 'RIFIUTATO')">
-            Rifiuta
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Turni questa settimana</div>
-      <div v-if="turniSettimana.length === 0" class="empty-state">
-        Nessun turno.
-      </div>
-      <div v-for="t in turniSettimana" :key="t.id" class="timb-row">
-        <span class="timb-name">{{ t.userName }}</span>
-        <span class="timb-time">{{ fmt(t.data) }}</span>
-        <span class="timb-status ts-in">{{ t.inizio }}–{{ t.fine }}</span>
-      </div>
-    </div>
+      <div class="dash-sub">{{ t.sottotitolo }}</div>
+    </RouterLink>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 import { api } from "@/api";
-import { conNomi } from "@/composables/useUtenti";
 import { toDateKey, weekDates } from "@/stores/planner";
 
-interface UserResponse {
-  id: number;
-  name: string;
-  email: string;
-  role: string;
-}
-interface TimbraturaResponse {
-  id: number;
-  userId: number;
-  userName: string;
-  tipo: string;
-  timestamp: string;
-}
-interface PermessoResponse {
-  id: number;
-  userId: number;
-  userName: string;
-  tipo: string;
-  dal: string;
-  stato: string;
-}
-interface TurnoResponse {
-  id: number;
-  userId: number;
-  userName: string;
-  data: string;
-  inizio: string;
-  fine: string;
-}
+const route = useRoute();
+// la stessa dashboard serve owner e admin, cambia solo il prefisso delle pagine
+const base = computed(() => (route.path.startsWith("/owner") ? "/owner" : "/admin"));
 
-const utenti = ref<UserResponse[]>([]);
-const timbratureOggi = ref<TimbraturaResponse[]>([]);
-const permessiAttesa = ref<PermessoResponse[]>([]);
-const turniSettimana = ref<TurnoResponse[]>([]);
+const utenti = ref(0);
+const timbratureOggi = ref(0);
+const permessiAttesa = ref(0);
+const turniSettimana = ref(0);
+const caricato = ref(false);
 
-function initials(name: string) {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
-}
+const ICONE = {
+  utenti: `<svg viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="3" stroke="currentColor" stroke-width="1.2"/><path d="M1 14c0-3 2-5 5-5s5 2 5 5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M11 3.5a2.5 2.5 0 0 1 0 4.5M13 13.5c0-2-.8-3.4-2-4.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  timbrature: `<svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  permessi: `<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M5 8h6M8 5v6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  turni: `<svg viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="1.5" stroke="currentColor" stroke-width="1.2"/><path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+};
 
-function fmt(d: string) {
-  if (!d) return "";
-  const [y, m, g] = d.split("-");
-  return `${g}/${m}/${y}`;
-}
-
-function fmtTime(ts: string) {
-  return new Date(ts).toLocaleTimeString("it-IT", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-async function aggiorna(id: number, stato: string) {
-  await api.patch(`/api/permessi/${id}/stato?stato=${stato}`, {});
-  permessiAttesa.value = permessiAttesa.value.filter((p) => p.id !== id);
-}
+const riquadri = computed(() => [
+  {
+    titolo: "Utenti",
+    to: base.value === "/owner" ? "/owner/utenti" : "/admin/membri",
+    valore: utenti.value,
+    sottotitolo: "persone registrate",
+    icona: ICONE.utenti,
+    colore: "c-purple",
+    evidenza: false,
+  },
+  {
+    titolo: "Timbrature",
+    to: `${base.value}/timbrature`,
+    valore: timbratureOggi.value,
+    sottotitolo: "registrate oggi",
+    icona: ICONE.timbrature,
+    colore: "c-teal",
+    evidenza: false,
+  },
+  {
+    titolo: "Permessi",
+    to: `${base.value}/permessi`,
+    valore: permessiAttesa.value,
+    sottotitolo: permessiAttesa.value ? "da approvare" : "nessuna richiesta in attesa",
+    icona: ICONE.permessi,
+    colore: "c-amber",
+    evidenza: permessiAttesa.value > 0,
+  },
+  {
+    titolo: "Turni",
+    to: `${base.value}/planner`,
+    valore: turniSettimana.value,
+    sottotitolo: "in programma questa settimana",
+    icona: ICONE.turni,
+    colore: "c-coral",
+    evidenza: false,
+  },
+]);
 
 let timer: ReturnType<typeof setInterval>;
 
-async function fetchLive() {
+async function carica() {
   const oggi = toDateKey(new Date());
-  const [t, p] = await Promise.all([
-    api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista)),
-    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((lista) => conNomi(lista)),
+  const settimana = weekDates(0);
+  const [u, t, p, turni] = await Promise.all([
+    api.get<unknown[]>("/api/users"),
+    api.get<{ timestamp: string }[]>("/api/timbrature"),
+    api.get<unknown[]>("/api/permessi/in-attesa"),
+    api.get<unknown[]>(`/api/turni?dal=${toDateKey(settimana[0])}&al=${toDateKey(settimana[6])}`),
   ]);
-  timbratureOggi.value = t.filter((x) => x.timestamp.startsWith(oggi));
-  permessiAttesa.value = p;
+  utenti.value = u.length;
+  timbratureOggi.value = t.filter((x) => x.timestamp.startsWith(oggi)).length;
+  permessiAttesa.value = p.length;
+  turniSettimana.value = turni.length;
+  caricato.value = true;
 }
 
-onMounted(async () => {
-  const oggi = toDateKey(new Date());
-  const dates = weekDates(0);
-  const dal = toDateKey(dates[0]);
-  const al = toDateKey(dates[6]);
-
-  const [u, t, p, turni] = await Promise.all([
-    api.get<UserResponse[]>("/api/users"),
-    api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista)),
-    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((lista) => conNomi(lista)),
-    api.get<TurnoResponse[]>(`/api/turni?dal=${dal}&al=${al}`).then((lista) => conNomi(lista)),
-  ]);
-
-  utenti.value = u;
-  timbratureOggi.value = t.filter((x) => x.timestamp.startsWith(oggi));
-  permessiAttesa.value = p;
-  turniSettimana.value = turni;
-
-  timer = setInterval(fetchLive, 30000);
+onMounted(() => {
+  carica();
+  // i numeri si aggiornano da soli, utile se la dashboard resta aperta
+  timer = setInterval(carica, 30000);
 });
-
 onUnmounted(() => clearInterval(timer));
 </script>
 
 <style scoped>
-.empty-state {
-  font-size: 13px;
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 1100px;
+}
+
+.dash-tile {
+  --accento: var(--purple-dark);
+  --fondo: var(--purple-light);
+  display: flex;
+  flex-direction: column;
+  min-height: 190px;
+  padding: 22px 24px;
+  background: var(--bg-secondary);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: transform 0.12s, border-color 0.12s, background 0.12s;
+}
+.dash-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--accento);
+  background: var(--bg-tertiary);
+}
+.dash-tile:focus-visible {
+  outline: 2px solid var(--accento);
+  outline-offset: 2px;
+}
+.dash-tile.evidenza {
+  border-color: var(--accento);
+}
+
+.c-purple {
+  --accento: var(--purple-dark);
+  --fondo: var(--purple-light);
+}
+.c-teal {
+  --accento: var(--teal-dark);
+  --fondo: var(--teal-light);
+}
+.c-amber {
+  --accento: var(--amber-dark);
+  --fondo: var(--amber-light);
+}
+.c-coral {
+  --accento: var(--coral-dark);
+  --fondo: var(--coral-light);
+}
+
+.dash-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dash-icon {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--fondo);
+  color: var(--accento);
+}
+.dash-icon :deep(svg) {
+  width: 22px;
+  height: 22px;
+}
+.dash-arrow {
+  font-size: 20px;
   color: var(--text-tertiary);
-  padding: 8px 0;
+  transition: transform 0.12s, color 0.12s;
+}
+.dash-tile:hover .dash-arrow {
+  transform: translateX(4px);
+  color: var(--accento);
+}
+
+.dash-title {
+  margin-top: 18px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.dash-num {
+  margin-top: auto;
+  padding-top: 10px;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--accento);
+  font-variant-numeric: tabular-nums;
+}
+.dash-skeleton {
+  display: inline-block;
+  width: 56px;
+  height: 34px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+}
+.dash-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 700px) {
+  .dash-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dash-tile {
+    min-height: 150px;
+  }
 }
 </style>

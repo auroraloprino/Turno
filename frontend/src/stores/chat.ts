@@ -11,6 +11,7 @@ export interface Messaggio {
   senderId: number;
   senderName: string;
   testo: string;
+  immagineUrl: string | null;
   timestamp: string;
   modificato: boolean;
   eliminato: boolean;
@@ -71,6 +72,26 @@ export const useChatStore = defineStore("chat", () => {
     _upsertMsg(msg);
   }
 
+  async function inviaImmagine(conversazioneId: number, file: File, testo: string) {
+    const msg = await api.upload<Messaggio>(
+      `/api/chat/conversazioni/${conversazioneId}/immagini`,
+      file,
+      testo ? { testo } : {},
+    );
+    _upsertMsg(msg);
+  }
+
+  async function creaGruppo(nome: string, userIds: number[]) {
+    const conv = await api.post<Omit<Conversazione, "messaggi" | "nonLetti">>(
+      "/api/chat/conversazioni/gruppo",
+      { nome, userIds },
+    );
+    if (!conversazioni.value.some((c) => c.id === conv.id))
+      conversazioni.value.push({ ...conv, messaggi: [], nonLetti: 0 });
+    _subscribe(conv.id);
+    return conv.id;
+  }
+
   async function modifica(messaggioId: number, testo: string) {
     const msg = await api.patch<Messaggio>(
       `/api/chat/messaggi/${messaggioId}`,
@@ -109,6 +130,10 @@ export const useChatStore = defineStore("chat", () => {
         connesso.value = true;
         await carica();
         conversazioni.value.forEach((c) => _subscribe(c.id));
+        // quando qualcuno mi aggiunge a un gruppo ricarico la lista, così compare senza aggiornare la pagina
+        client!.subscribe(`/topic/notifiche/${auth.user!.id}`, (frame) => {
+          if (JSON.parse(frame.body).tipo === "gruppo") carica();
+        });
       },
       onDisconnect: () => {
         connesso.value = false;
@@ -163,6 +188,8 @@ export const useChatStore = defineStore("chat", () => {
     carica,
     apri,
     invia,
+    inviaImmagine,
+    creaGruppo,
     modifica,
     elimina,
     rimuovi,

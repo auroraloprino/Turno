@@ -1,9 +1,16 @@
 package com.turno.chat;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.util.List;
 
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.data.mongodb.gridfs.GridFsResource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -66,10 +73,32 @@ public class ChatController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping(value = "/conversazioni/{id}/immagini", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ChatDto.MessaggioResponse> inviaImmagine(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(value = "testo", required = false) String testo,
+            @AuthenticationPrincipal AuthUser user) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.inviaImmagine(id, file, testo, user));
+    }
+
+    @GetMapping("/immagini/{id}")
+    public ResponseEntity<InputStreamResource> immagine(
+            @PathVariable String id, @AuthenticationPrincipal AuthUser user) throws IOException {
+        GridFsResource file = service.immagine(id, user);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.getContentType()))
+                // l'immagine non cambia, il browser la tiene in cache
+                .cacheControl(CacheControl.maxAge(Duration.ofDays(7)).cachePrivate())
+                .body(new InputStreamResource(file.getInputStream()));
+    }
+
     @PostMapping("/conversazioni/gruppo")
-    @PreAuthorize("hasAnyRole('OWNER', 'ADMIN')")
-    public ResponseEntity<ChatDto.ConversazioneResponse> creaGruppo(@RequestBody CreaGruppoRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.creaGruppo(request.nome(), request.userIds()));
+    public ResponseEntity<ChatDto.ConversazioneResponse> creaGruppo(
+            @Valid @RequestBody CreaGruppoRequest request,
+            @AuthenticationPrincipal AuthUser user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(service.creaGruppo(request.nome(), request.userIds(), user));
     }
 
     @PostMapping("/conversazioni/privata")

@@ -25,12 +25,17 @@ public class IdNumerici implements BeforeConvertCallback<ConIdNumerico> {
 
     // tengo gli id numerici, così frontend, JWT e userId tra servizi parlano tutti la stessa lingua
     private long prossimo(String collection) {
+        return riserva(collection, 1);
+    }
+
+    // prenota un blocco di id con un solo giro su Mongo e restituisce il primo, serve agli inserimenti in blocco
+    public long riserva(String collection, int quanti) {
         Document contatore = mongo.findAndModify(
                 Query.query(Criteria.where("_id").is(collection)),
-                new Update().inc("seq", 1L),
-                // l'incremento è atomico quindi due richieste insieme non prendono mai lo stesso id
+                new Update().inc("seq", (long) quanti),
+                // l'incremento è atomico quindi due richieste insieme non prendono mai gli stessi id
                 FindAndModifyOptions.options().returnNew(true).upsert(true),
                 Document.class, "contatori");
-        return ((Number) contatore.get("seq")).longValue();
+        return ((Number) contatore.get("seq")).longValue() - quanti + 1;
     }
 }

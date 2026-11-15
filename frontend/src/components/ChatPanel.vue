@@ -12,8 +12,53 @@
       </div>
 
       <div class="side-scroll">
+        <div class="side-section">
+          Gruppi
+          <button class="side-add" title="Nuovo gruppo" @click="iniziaGruppo">
+            +
+          </button>
+        </div>
+
+        <div v-if="creandoGruppo" class="new-group">
+          <input
+            ref="nomeGruppoRef"
+            v-model="nomeGruppo"
+            maxlength="60"
+            placeholder="Nome del gruppo"
+            @keydown.esc="annullaGruppo"
+          />
+          <input
+            v-model="cercaMembri"
+            type="search"
+            placeholder="Cerca persone da aggiungere"
+          />
+          <div class="pick-list">
+            <label v-for="u in candidatiGruppo" :key="u.id" class="pick">
+              <input v-model="membriGruppo" type="checkbox" :value="u.id" />
+              <span class="av xs" :style="avatarStyle(u.id)">
+                {{ initials(u.name) }}
+              </span>
+              <span class="conv-name">{{ u.name }}</span>
+            </label>
+            <div v-if="!candidatiGruppo.length" class="side-empty">
+              Nessuna persona trovata.
+            </div>
+          </div>
+          <div v-if="erroreGruppo" class="send-error">{{ erroreGruppo }}</div>
+          <div class="new-group-actions">
+            <span class="pick-count">{{ membriGruppo.length }} selezionati</span>
+            <button class="btn-ghost" @click="annullaGruppo">Annulla</button>
+            <button
+              class="btn-primary"
+              :disabled="!nomeGruppo.trim() || !membriGruppo.length"
+              @click="confermaGruppo"
+            >
+              Crea
+            </button>
+          </div>
+        </div>
+
         <template v-if="gruppi.length">
-          <div class="side-section">Gruppi</div>
           <div
             v-for="c in gruppi"
             :key="c.id"
@@ -23,7 +68,7 @@
           >
             <span class="conv-hash">#</span>
             <span class="conv-name">{{ c.nome }}</span>
-            <span v-if="c.nonLetti" class="badge">{{ c.nonLetti }}</span>
+            <span v-if="c.nonLetti" class="non-letti">{{ c.nonLetti }}</span>
             <button
               class="conv-close"
               title="Nascondi"
@@ -33,6 +78,9 @@
             </button>
           </div>
         </template>
+        <div v-else-if="!creandoGruppo && !ricerca" class="side-empty">
+          Nessun gruppo. Crealo con +
+        </div>
 
         <div class="side-section">
           Messaggi diretti
@@ -51,11 +99,11 @@
           :class="{ sel: activeId === c.id, unread: c.nonLetti > 0 }"
           @click="open(c.id)"
         >
-          <span class="avatar sm" :style="avatarStyle(otherId(c))">
+          <span class="av sm" :style="avatarStyle(otherId(c))">
             {{ initials(titolo(c)) }}
           </span>
           <span class="conv-name">{{ titolo(c) }}</span>
-          <span v-if="c.nonLetti" class="badge">{{ c.nonLetti }}</span>
+          <span v-if="c.nonLetti" class="non-letti">{{ c.nonLetti }}</span>
           <button
             class="conv-close"
             title="Nascondi"
@@ -76,7 +124,7 @@
             class="conv"
             @click="avviaPrivata(u)"
           >
-            <span class="avatar sm" :style="avatarStyle(u.id)">
+            <span class="av sm" :style="avatarStyle(u.id)">
               {{ initials(u.name) }}
             </span>
             <span class="conv-name">{{ u.name }}</span>
@@ -96,31 +144,52 @@
       </div>
     </aside>
 
-    <section class="main">
+    <section
+      class="pannello"
+      :class="{ dragging: trascinando }"
+      @dragover.prevent="trascinando = !!active"
+      @dragleave.self="trascinando = false"
+      @drop.prevent="onDrop"
+    >
       <template v-if="active">
         <header class="head">
           <button class="back" title="Indietro" @click="chiudiAttiva">‹</button>
           <span v-if="active.tipo === 'group'" class="head-hash">#</span>
-          <span v-else class="avatar sm" :style="avatarStyle(otherId(active))">
+          <span v-else class="av sm" :style="avatarStyle(otherId(active))">
             {{ initials(titolo(active)) }}
           </span>
           <span class="head-name">{{ titolo(active) }}</span>
           <span v-if="active.tipo === 'group'" class="head-sub">
             {{ active.partecipanti.length }} membri
           </span>
-          <button
-            v-if="active.tipo === 'group'"
-            class="head-btn"
-            :class="{ on: showMembers }"
-            title="Mostra membri"
-            @click="showMembers = !showMembers"
-          >
-            Membri
-          </button>
+          <div class="head-tools">
+            <div class="zoom" title="Zoom dei messaggi (anche Ctrl + rotella)">
+              <button :disabled="zoom <= ZOOM_MIN" @click="cambiaZoom(-1)">−</button>
+              <button class="zoom-val" @click="zoom = 1">
+                {{ Math.round(zoom * 100) }}%
+              </button>
+              <button :disabled="zoom >= ZOOM_MAX" @click="cambiaZoom(1)">+</button>
+            </div>
+            <button
+              v-if="active.tipo === 'group'"
+              class="head-btn"
+              :class="{ on: showMembers }"
+              title="Mostra membri"
+              @click="showMembers = !showMembers"
+            >
+              Membri
+            </button>
+          </div>
         </header>
 
         <div class="body">
-          <div ref="scroller" class="scroller" @scroll="onScroll">
+          <div
+            ref="scroller"
+            class="scroller"
+            :style="{ zoom }"
+            @scroll="onScroll"
+            @wheel="onWheel"
+          >
             <div class="intro">
               <div
                 class="intro-icon"
@@ -153,13 +222,13 @@
 
               <div
                 v-else
-                class="msg"
-                :class="{ head: row.head, editing: editingId === row.msg.id }"
+                class="riga"
+                :class="{ primo: row.head, editing: editingId === row.msg.id }"
               >
                 <div class="gutter">
                   <span
                     v-if="row.head"
-                    class="avatar"
+                    class="av"
                     :style="avatarStyle(row.msg.senderId)"
                   >
                     {{ initials(nomeDi(row.msg)) }}
@@ -169,7 +238,7 @@
                   }}</span>
                 </div>
 
-                <div class="content">
+                <div class="corpo">
                   <div v-if="row.head" class="meta">
                     <span
                       class="author"
@@ -202,6 +271,14 @@
                         >(modificato)</span
                       >
                     </div>
+                    <img
+                      v-if="row.msg.immagineUrl"
+                      class="img"
+                      :src="srcImmagine(row.msg.immagineUrl)"
+                      alt="immagine"
+                      @load="scrollBottom()"
+                      @click="apriImmagine(row.msg.immagineUrl)"
+                    />
                   </template>
                 </div>
 
@@ -229,7 +306,7 @@
               Membri — {{ active.partecipanti.length }}
             </div>
             <div v-for="id in active.partecipanti" :key="id" class="member">
-              <span class="avatar sm" :style="avatarStyle(id)">
+              <span class="av sm" :style="avatarStyle(id)">
                 {{ initials(nomeUtente(id)) }}
               </span>
               <span class="member-name">{{ nomeUtente(id) }}</span>
@@ -239,7 +316,19 @@
 
         <footer class="composer">
           <div v-if="sendError" class="send-error">{{ sendError }}</div>
+          <div v-if="allegato" class="pending">
+            <img :src="anteprima" alt="anteprima" />
+            <span class="pending-name">{{ allegato.name }}</span>
+            <button title="Togli l'immagine" @click="rimuoviAllegato">×</button>
+          </div>
           <div class="composer-box">
+            <button
+              class="attach"
+              title="Allega un'immagine (anche incolla o trascina)"
+              @click="fileRef?.click()"
+            >
+              +
+            </button>
             <textarea
               ref="inputRef"
               v-model="draft"
@@ -250,13 +339,17 @@
                   : `Scrivi a @${titolo(active)}`
               "
               @input="autoResize"
+              @paste="onPaste"
               @keydown.enter.exact.prevent="send"
               @keydown.up="editLastIfEmpty"
             />
-          </div>
-          <div class="composer-hint">
-            Invio per inviare · Shift+Invio per andare a capo · ↑ per modificare
-            l'ultimo messaggio · supporta **grassetto**, *corsivo*, `codice`
+            <input
+              ref="fileRef"
+              type="file"
+              accept="image/png,image/jpeg,image/gif,image/webp"
+              hidden
+              @change="onFileScelto"
+            />
           </div>
         </footer>
       </template>
@@ -266,6 +359,32 @@
         <div>Seleziona una conversazione o cerca una persona per iniziare.</div>
       </div>
     </section>
+
+    <Teleport to="body">
+      <div
+        v-if="lightbox"
+        class="lightbox"
+        @click.self="chiudiLightbox"
+        @wheel.prevent="(e: WheelEvent) => lbZoom(e.deltaY < 0 ? 1 : -1)"
+      >
+        <div class="lb-tools">
+          <button title="Riduci" @click="lbZoom(-1)">−</button>
+          <button class="lb-val" title="Adatta allo schermo" @click="adattaLightbox">
+            {{ Math.round(lbScala * 100) }}%
+          </button>
+          <button title="Ingrandisci" @click="lbZoom(1)">+</button>
+          <button title="Apri in una nuova scheda" @click="apriInScheda">↗</button>
+          <button title="Chiudi (Esc)" @click="chiudiLightbox">×</button>
+        </div>
+        <img
+          :src="lightbox"
+          alt="immagine"
+          draggable="false"
+          :style="{ width: lbNat.w * lbScala + 'px' }"
+          @load="onLbLoad"
+        />
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -309,6 +428,57 @@ const sendError = ref("");
 const showMembers = ref(true);
 const editingId = ref<number | null>(null);
 const editDraft = ref("");
+
+const creandoGruppo = ref(false);
+const nomeGruppo = ref("");
+const cercaMembri = ref("");
+const membriGruppo = ref<number[]>([]);
+const erroreGruppo = ref("");
+const nomeGruppoRef = ref<HTMLInputElement | null>(null);
+
+const allegato = ref<File | null>(null);
+const anteprima = ref("");
+const trascinando = ref(false);
+const fileRef = ref<HTMLInputElement | null>(null);
+// url del backend -> url locale del blob, così ogni immagine si scarica una volta sola
+const immagini = ref<Record<string, string>>({});
+const inCaricamento = new Set<string>();
+
+const ZOOM_MIN = 0.7;
+const ZOOM_MAX = 1.8;
+const ZOOM_PASSO = 0.1;
+const zoom = ref(leggiZoom());
+
+function leggiZoom() {
+  try {
+    const v = Number(localStorage.getItem("chat_zoom"));
+    return v >= ZOOM_MIN && v <= ZOOM_MAX ? v : 1;
+  } catch {
+    return 1;
+  }
+}
+
+function cambiaZoom(direzione: number) {
+  // arrotondo per non accumulare errori tipo 1.2000000000000002
+  const nuovo = Math.round((zoom.value + direzione * ZOOM_PASSO) * 10) / 10;
+  zoom.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, nuovo));
+}
+
+// Ctrl + rotella sopra i messaggi ingrandisce solo la chat invece di tutta la pagina
+function onWheel(e: WheelEvent) {
+  if (!e.ctrlKey) return;
+  e.preventDefault();
+  cambiaZoom(e.deltaY < 0 ? 1 : -1);
+}
+
+watch(zoom, (v) => {
+  try {
+    localStorage.setItem("chat_zoom", String(v));
+  } catch {
+    // senza localStorage lo zoom vale solo per singola sessione
+  }
+  scrollBottom();
+});
 
 const searchRef = ref<HTMLInputElement | null>(null);
 const inputRef = ref<HTMLTextAreaElement | null>(null);
@@ -437,13 +607,15 @@ marked.setOptions({ breaks: true });
 
 function renderMd(text: string): string {
   let t = text.replace(/^-#\s+(.+)$/gm, "<small>$1</small>");
-  t = t.replace(/~~(.+?)~~/g, "<del>$1</del>");
   t = t.replace(/__(.+?)__/g, "<u>$1</u>");
   // i messaggi arrivano da altri utenti, quindi vanno sempre sanificati prima di finire nel v-html
   return DOMPurify.sanitize(marked.parse(t) as string, {
     ALLOWED_TAGS: [
       "p",
       "br",
+      "h1",
+      "h2",
+      "h3",
       "strong",
       "em",
       "u",
@@ -522,17 +694,163 @@ function chiudiConv(id: number) {
   store.rimuovi(id);
 }
 
+const inviando = ref(false);
+
 async function send() {
   const testo = draft.value.trim();
-  if (!testo || !active.value) return;
+  const file = allegato.value;
+  // finché un invio è in corso gli Invio successivi non fanno niente, sennò l'immagine partiva più volte
+  if (inviando.value || (!testo && !file) || !active.value) return;
+  inviando.value = true;
   sendError.value = "";
   draft.value = "";
   if (inputRef.value) inputRef.value.style.height = "auto";
+  // tolgo subito l'allegato dal composer, così non resta lì pronto a essere rimandato
+  allegato.value = null;
   try {
-    await store.invia(active.value.id, testo);
+    // con un'immagine in attesa il testo diventa la sua didascalia
+    if (file) await store.inviaImmagine(active.value.id, file, testo);
+    else await store.invia(active.value.id, testo);
+    if (anteprima.value) URL.revokeObjectURL(anteprima.value);
+    anteprima.value = "";
+    if (fileRef.value) fileRef.value.value = "";
   } catch (e) {
     draft.value = testo;
+    allegato.value = file;
     sendError.value = e instanceof Error ? e.message : "Invio non riuscito.";
+  } finally {
+    inviando.value = false;
+  }
+}
+
+const MAX_IMMAGINE = 5 * 1024 * 1024;
+
+function preparaAllegato(file: File | null | undefined) {
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    sendError.value = "Si possono allegare solo immagini.";
+    return;
+  }
+  if (file.size > MAX_IMMAGINE) {
+    sendError.value = "L'immagine supera i 5 MB.";
+    return;
+  }
+  rimuoviAllegato();
+  sendError.value = "";
+  allegato.value = file;
+  anteprima.value = URL.createObjectURL(file);
+  nextTick(() => inputRef.value?.focus());
+}
+
+function rimuoviAllegato() {
+  if (anteprima.value) URL.revokeObjectURL(anteprima.value);
+  allegato.value = null;
+  anteprima.value = "";
+  if (fileRef.value) fileRef.value.value = "";
+}
+
+function onFileScelto(e: Event) {
+  preparaAllegato((e.target as HTMLInputElement).files?.[0]);
+}
+
+// screenshot incollati con Ctrl+V diventano subito un allegato
+function onPaste(e: ClipboardEvent) {
+  const file = [...(e.clipboardData?.files ?? [])].find((f) =>
+    f.type.startsWith("image/"),
+  );
+  if (!file) return;
+  e.preventDefault();
+  preparaAllegato(file);
+}
+
+function onDrop(e: DragEvent) {
+  trascinando.value = false;
+  if (active.value) preparaAllegato(e.dataTransfer?.files?.[0]);
+}
+
+// il download vuole il token, quindi l'immagine passa da un blob e non da un src diretto
+function srcImmagine(url: string) {
+  if (!immagini.value[url] && !inCaricamento.has(url)) {
+    inCaricamento.add(url);
+    api
+      .blob(url)
+      .then((b) => (immagini.value[url] = URL.createObjectURL(b)))
+      .finally(() => inCaricamento.delete(url));
+  }
+  return immagini.value[url] ?? "";
+}
+
+const lightbox = ref<string | null>(null);
+const lbScala = ref(1);
+const lbNat = ref({ w: 0, h: 0 });
+
+function apriImmagine(url: string) {
+  if (!immagini.value[url]) return;
+  lbNat.value = { w: 0, h: 0 };
+  lightbox.value = immagini.value[url];
+}
+
+function onLbLoad(e: Event) {
+  const img = e.target as HTMLImageElement;
+  if (lbNat.value.w) return;
+  lbNat.value = { w: img.naturalWidth, h: img.naturalHeight };
+  adattaLightbox();
+}
+
+// all'apertura l'immagine sta tutta nello schermo, senza ingrandire quelle piccole
+function adattaLightbox() {
+  const { w, h } = lbNat.value;
+  if (!w || !h) return;
+  lbScala.value = Math.min(1, (window.innerWidth * 0.9) / w, (window.innerHeight * 0.85) / h);
+}
+
+function lbZoom(direzione: number) {
+  const nuova = lbScala.value * (direzione > 0 ? 1.25 : 0.8);
+  lbScala.value = Math.min(8, Math.max(0.05, nuova));
+}
+
+function apriInScheda() {
+  if (lightbox.value) window.open(lightbox.value, "_blank");
+}
+
+function chiudiLightbox() {
+  lightbox.value = null;
+}
+
+function onTasto(e: KeyboardEvent) {
+  if (e.key === "Escape" && lightbox.value) chiudiLightbox();
+}
+
+const candidatiGruppo = computed(() => {
+  const q = cercaMembri.value.trim().toLowerCase();
+  return utenti.value
+    .filter((u) => u.id !== myId.value)
+    .filter((u) => !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+    .slice(0, 50);
+});
+
+function iniziaGruppo() {
+  creandoGruppo.value = !creandoGruppo.value;
+  erroreGruppo.value = "";
+  if (creandoGruppo.value) nextTick(() => nomeGruppoRef.value?.focus());
+}
+
+function annullaGruppo() {
+  creandoGruppo.value = false;
+  nomeGruppo.value = "";
+  cercaMembri.value = "";
+  membriGruppo.value = [];
+  erroreGruppo.value = "";
+}
+
+async function confermaGruppo() {
+  erroreGruppo.value = "";
+  try {
+    const id = await store.creaGruppo(nomeGruppo.value.trim(), membriGruppo.value);
+    annullaGruppo();
+    await open(id);
+  } catch (e) {
+    erroreGruppo.value = e instanceof Error ? e.message : "Creazione non riuscita.";
   }
 }
 
@@ -599,13 +917,19 @@ async function avviaPrivata(u: Utente) {
 }
 
 onMounted(async () => {
+  window.addEventListener("keydown", onTasto);
   await store.carica();
   store.connetti();
   utenti.value = await api.get<Utente[]>("/api/users").catch(() => []);
 });
 
 // la connessione WebSocket la gestisce il layout, così i badge dei non letti restano attivi nelle altre pagine
-onUnmounted(() => store.setActive(null));
+onUnmounted(() => {
+  window.removeEventListener("keydown", onTasto);
+  store.setActive(null);
+  rimuoviAllegato();
+  Object.values(immagini.value).forEach((u) => URL.revokeObjectURL(u));
+});
 </script>
 
 <style scoped>
@@ -658,7 +982,7 @@ onUnmounted(() => store.setActive(null));
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--text-tertiary);
-  padding: 14px 6px 6px;
+  padding: 10px 6px 4px;
 }
 .side-add {
   background: none;
@@ -681,7 +1005,7 @@ onUnmounted(() => store.setActive(null));
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px;
+  padding: 4px 8px;
   margin: 1px 0;
   border-radius: 6px;
   color: var(--text-secondary);
@@ -713,7 +1037,7 @@ onUnmounted(() => store.setActive(null));
   text-overflow: ellipsis;
   font-size: 13px;
 }
-.badge {
+.non-letti {
   background: var(--coral-dark);
   color: #fff;
   font-size: 10px;
@@ -736,9 +1060,9 @@ onUnmounted(() => store.setActive(null));
   color: var(--text-primary);
 }
 
-.avatar {
-  width: 38px;
-  height: 38px;
+.av {
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
@@ -748,13 +1072,13 @@ onUnmounted(() => store.setActive(null));
   font-size: 13px;
   font-weight: 600;
 }
-.avatar.sm {
+.av.sm {
   width: 24px;
   height: 24px;
   font-size: 10px;
 }
 
-.main {
+.pannello {
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -764,7 +1088,7 @@ onUnmounted(() => store.setActive(null));
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
+  padding: 7px 14px;
   border-bottom: 0.5px solid var(--border);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
@@ -792,8 +1116,39 @@ onUnmounted(() => store.setActive(null));
   padding-left: 10px;
   border-left: 0.5px solid var(--border-md);
 }
-.head-btn {
+.head-tools {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.zoom {
+  display: flex;
+  border: 0.5px solid var(--border-md);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.zoom button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  padding: 2px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.zoom button:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.zoom button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.zoom-val {
+  min-width: 44px;
+  font-variant-numeric: tabular-nums;
+}
+.head-btn {
   background: none;
   border: 0.5px solid var(--border-md);
   color: var(--text-secondary);
@@ -816,40 +1171,40 @@ onUnmounted(() => store.setActive(null));
   flex: 1;
   min-width: 0;
   overflow-y: auto;
-  padding: 0 0 12px;
+  padding: 0 0 6px;
 }
 
 .intro {
-  padding: 32px 16px 12px;
+  padding: 10px 14px 2px;
 }
 .intro-icon {
-  width: 64px;
-  height: 64px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--bg-tertiary);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 17px;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .intro-title {
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--text-primary);
 }
 .intro-sub {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-secondary);
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .day-divider {
   display: flex;
   align-items: center;
-  margin: 18px 16px 6px;
+  margin: 8px 14px 2px;
   font-size: 11px;
   font-weight: 600;
   color: var(--text-tertiary);
@@ -865,39 +1220,39 @@ onUnmounted(() => store.setActive(null));
   padding: 0 8px;
 }
 
-.msg {
+.riga {
   position: relative;
   display: flex;
-  gap: 14px;
-  padding: 2px 16px;
+  gap: 12px;
+  padding: 1px 16px;
 }
-.msg.head {
-  margin-top: 14px;
+.riga.primo {
+  margin-top: 12px;
 }
-.msg:hover,
-.msg.editing {
+.riga:hover,
+.riga.editing {
   background: rgba(255, 255, 255, 0.025);
 }
 .gutter {
-  width: 40px;
+  width: 30px;
   flex-shrink: 0;
   display: flex;
   justify-content: center;
 }
-.msg.head .gutter {
-  padding-top: 2px;
+.riga.primo .gutter {
+  padding-top: 1px;
 }
 .gutter-time {
   font-size: 10px;
   color: var(--text-tertiary);
-  line-height: 22px;
+  line-height: 20px;
   visibility: hidden;
   font-variant-numeric: tabular-nums;
 }
-.msg:hover .gutter-time {
+.riga:hover .gutter-time {
   visibility: visible;
 }
-.content {
+.corpo {
   flex: 1;
   min-width: 0;
 }
@@ -905,10 +1260,12 @@ onUnmounted(() => store.setActive(null));
   display: flex;
   align-items: baseline;
   gap: 8px;
+  line-height: 1.3;
+  margin-bottom: 1px;
 }
 .author {
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
 }
 .stamp {
   font-size: 11px;
@@ -916,7 +1273,8 @@ onUnmounted(() => store.setActive(null));
 }
 .text {
   color: var(--text-primary);
-  line-height: 1.45;
+  font-size: 13px;
+  line-height: 1.5;
   word-wrap: break-word;
 }
 .edited {
@@ -930,7 +1288,7 @@ onUnmounted(() => store.setActive(null));
 .md :deep(p + p)::before {
   content: "";
   display: block;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 .md :deep(code) {
   background: #111;
@@ -978,7 +1336,7 @@ onUnmounted(() => store.setActive(null));
   overflow: hidden;
   z-index: 1;
 }
-.msg:hover .actions {
+.riga:hover .actions {
   display: flex;
 }
 .actions button {
@@ -1022,7 +1380,7 @@ onUnmounted(() => store.setActive(null));
 }
 
 .members {
-  width: 200px;
+  width: 180px;
   flex-shrink: 0;
   border-left: 0.5px solid var(--border);
   background: #191919;
@@ -1045,12 +1403,15 @@ onUnmounted(() => store.setActive(null));
 }
 
 .composer {
-  padding: 0 16px 10px;
+  padding: 0 14px 8px;
 }
 .composer-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
   background: var(--bg-tertiary);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 7px 10px;
 }
 .composer-box textarea {
   width: 100%;
@@ -1059,6 +1420,7 @@ onUnmounted(() => store.setActive(null));
   border: none;
   color: var(--text-primary);
   font: inherit;
+  font-size: 13px;
   line-height: 1.4;
   max-height: 200px;
 }
@@ -1067,14 +1429,6 @@ onUnmounted(() => store.setActive(null));
 }
 .composer-box textarea::placeholder {
   color: var(--text-tertiary);
-}
-.composer-hint {
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-top: 5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 .send-error {
   font-size: 12px;
@@ -1099,6 +1453,212 @@ onUnmounted(() => store.setActive(null));
   opacity: 0.6;
 }
 
+.av.xs {
+  width: 20px;
+  height: 20px;
+  font-size: 9px;
+}
+
+.md :deep(h1),
+.md :deep(h2),
+.md :deep(h3) {
+  display: block;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 4px 0 2px;
+  color: var(--text-primary);
+}
+.md :deep(h1) {
+  font-size: 20px;
+}
+.md :deep(h2) {
+  font-size: 17px;
+}
+.md :deep(h3) {
+  font-size: 15px;
+}
+.md :deep(del) {
+  text-decoration: line-through;
+  opacity: 0.75;
+}
+
+.img {
+  display: block;
+  max-width: min(360px, 100%);
+  max-height: 280px;
+  min-height: 40px;
+  margin: 3px 0 2px;
+  border-radius: 6px;
+  cursor: zoom-in;
+  object-fit: contain;
+  background: var(--bg-tertiary);
+}
+
+.pannello.dragging {
+  outline: 2px dashed var(--purple);
+  outline-offset: -6px;
+}
+
+.pending {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 6px;
+  width: fit-content;
+  max-width: 100%;
+}
+.pending img {
+  height: 48px;
+  border-radius: 4px;
+}
+.pending-name {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pending button,
+.attach {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+}
+.attach {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  font-size: 16px;
+}
+.pending button:hover,
+.attach:hover {
+  color: var(--text-primary);
+}
+
+.new-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  margin: 2px 0 6px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+}
+.new-group input[type="search"],
+.new-group input:not([type]) {
+  width: 100%;
+  background: #111;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.new-group input:focus {
+  outline: 1px solid var(--purple);
+}
+.pick-list {
+  max-height: 180px;
+  overflow-y: auto;
+}
+.pick {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.pick:hover {
+  background: var(--bg-tertiary);
+}
+.new-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pick-count {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.btn-ghost,
+.btn-primary {
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.btn-ghost {
+  background: none;
+  color: var(--text-secondary);
+}
+.btn-primary {
+  background: var(--purple);
+  color: #fff;
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.88);
+}
+.lightbox img {
+  display: block;
+  margin: auto;
+  max-width: none;
+  user-select: none;
+}
+.lb-tools {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  z-index: 1001;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: rgba(30, 30, 30, 0.92);
+  border: 0.5px solid var(--border-md);
+  border-radius: 8px;
+}
+.lb-tools button {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 15px;
+  min-width: 30px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.lb-tools button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+.lb-val {
+  font-size: 12px !important;
+  min-width: 52px !important;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (max-width: 1100px) {
   .members {
     display: none;
@@ -1114,7 +1674,7 @@ onUnmounted(() => store.setActive(null));
   .chat.has-active .side {
     display: none;
   }
-  .chat:not(.has-active) .main {
+  .chat:not(.has-active) .pannello {
     display: none;
   }
   .back {

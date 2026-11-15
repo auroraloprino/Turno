@@ -4,6 +4,10 @@ spring:
       uri: ${MONGODB_URI}
       database: ${MONGODB_DATABASE:chatdb}
       auto-index-creation: true
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   kafka:
     bootstrap-servers: ${KAFKA_HOST:localhost}:${KAFKA_PORT:9092}
     consumer:

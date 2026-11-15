@@ -24,6 +24,9 @@ public class Messaggio implements ConIdNumerico {
 
     private String testo;
 
+    // id del file in GridFS, null per i messaggi di solo testo
+    private String immagineId;
+
     private Instant timestamp;
 
     private boolean modificato = false;
@@ -43,6 +46,14 @@ public class Messaggio implements ConIdNumerico {
 
     public Long getId() {
         return id;
+    }
+
+    public String getImmagineId() {
+        return immagineId;
+    }
+
+    public void setImmagineId(String immagineId) {
+        this.immagineId = immagineId;
     }
 
     public void setId(Long id) {
