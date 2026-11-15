@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { api } from "@/api";
+import { conNomi } from "@/composables/useUtenti";
 
 interface TimbraturaResponse {
   id: number;
@@ -134,7 +135,7 @@ async function timbra() {
           minute: "2-digit",
         })
       : "";
-    timbrature.value = await api.get<TimbraturaResponse[]>("/api/timbrature");
+    timbrature.value = await api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista));
   } finally {
     loadingTimb.value = false;
   }
@@ -172,12 +173,12 @@ onMounted(async () => {
 
   loading.value = true;
   try {
-    timbrature.value = await api.get<TimbraturaResponse[]>("/api/timbrature");
+    timbrature.value = await api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista));
   } finally {
     loading.value = false;
   }
   timer = setInterval(async () => {
-    timbrature.value = await api.get<TimbraturaResponse[]>("/api/timbrature");
+    timbrature.value = await api.get<TimbraturaResponse[]>("/api/timbrature").then((lista) => conNomi(lista));
   }, 30000);
 });
 

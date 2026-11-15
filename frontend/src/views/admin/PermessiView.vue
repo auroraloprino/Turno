@@ -15,9 +15,9 @@
           <div v-if="p.note" class="perm-note">{{ p.note }}</div>
           <a
             v-if="p.certificatoUrl"
-            :href="p.certificatoUrl"
-            target="_blank"
+            href="#"
             class="cert-link"
+            @click.prevent="apriCertificato(p.certificatoUrl)"
             >📎 Certificato</a
           >
         </div>
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { api } from "@/api";
+import { conNomi } from "@/composables/useUtenti";
 
 interface PermessoResponse {
   id: number;
@@ -81,7 +82,12 @@ async function aggiorna(id: number, stato: string) {
   );
   inAttesa.value = inAttesa.value.filter((p) => p.id !== id);
   const idx = tutti.value.findIndex((p) => p.id === id);
-  if (idx !== -1) tutti.value[idx] = updated;
+  if (idx !== -1) tutti.value[idx] = { ...updated, userName: tutti.value[idx].userName };
+}
+
+// il download vuole il token, un link diretto prenderebbe 401
+async function apriCertificato(url: string) {
+  window.open(URL.createObjectURL(await api.blob(url)), "_blank");
 }
 
 function fmt(d: string) {
@@ -102,8 +108,8 @@ async function fetchAll() {
   loadingAttesa.value = true;
   loadingTutti.value = true;
   const [a, t] = await Promise.allSettled([
-    api.get<PermessoResponse[]>("/api/permessi/in-attesa"),
-    api.get<PermessoResponse[]>("/api/permessi"),
+    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((lista) => conNomi(lista)),
+    api.get<PermessoResponse[]>("/api/permessi").then((lista) => conNomi(lista)),
   ]);
   if (a.status === "fulfilled") inAttesa.value = a.value;
   if (t.status === "fulfilled") tutti.value = t.value;
@@ -114,7 +120,7 @@ async function fetchAll() {
 onMounted(() => {
   fetchAll();
   timer = setInterval(() => {
-    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((v) => {
+    api.get<PermessoResponse[]>("/api/permessi/in-attesa").then((lista) => conNomi(lista)).then((v) => {
       inAttesa.value = v;
     });
   }, 20000);
