@@ -272,8 +272,12 @@
                         >(modificato)</span
                       >
                     </div>
+                    <div
+                      v-if="row.msg.immagineUrl && !srcImmagine(row.msg.immagineUrl)"
+                      class="img img-attesa"
+                    />
                     <img
-                      v-if="row.msg.immagineUrl"
+                      v-else-if="row.msg.immagineUrl"
                       class="img"
                       :src="srcImmagine(row.msg.immagineUrl)"
                       alt="immagine"
@@ -1504,6 +1508,11 @@ onUnmounted(() => {
   background: var(--bg-tertiary);
 }
 
+.img-attesa {
+  width: 240px;
+  height: 160px;
+  cursor: default;
+}
 .pannello.dragging {
   outline: 2px dashed var(--purple);
   outline-offset: -6px;
