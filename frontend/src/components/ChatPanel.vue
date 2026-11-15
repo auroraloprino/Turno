@@ -183,6 +183,7 @@
         </header>
 
         <div class="body">
+          <div class="colonna">
           <div
             ref="scroller"
             class="scroller"
@@ -301,6 +302,47 @@
             </template>
           </div>
 
+          <footer class="composer">
+            <div v-if="sendError" class="send-error">{{ sendError }}</div>
+            <div v-if="allegato" class="pending">
+              <img :src="anteprima" alt="anteprima" />
+              <span class="pending-name">{{ allegato.name }}</span>
+              <button title="Togli l'immagine" @click="rimuoviAllegato">×</button>
+            </div>
+            <div class="composer-box">
+              <button
+                class="attach"
+                title="Allega un'immagine (anche incolla o trascina)"
+                @click="fileRef?.click()"
+              >
+                +
+              </button>
+              <textarea
+                ref="inputRef"
+                v-model="draft"
+                rows="1"
+                :placeholder="
+                  active.tipo === 'group'
+                    ? `Scrivi in #${titolo(active)}`
+                    : `Scrivi a @${titolo(active)}`
+                "
+                @input="autoResize"
+                @paste="onPaste"
+                @keydown.enter.exact.prevent="send"
+                @keydown.up="editLastIfEmpty"
+              />
+              <input
+                ref="fileRef"
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp"
+                hidden
+                @change="onFileScelto"
+              />
+            </div>
+          </footer>
+  
+          </div>
+
           <aside v-if="active.tipo === 'group' && showMembers" class="members">
             <div class="side-section">
               Membri — {{ active.partecipanti.length }}
@@ -313,45 +355,6 @@
             </div>
           </aside>
         </div>
-
-        <footer class="composer">
-          <div v-if="sendError" class="send-error">{{ sendError }}</div>
-          <div v-if="allegato" class="pending">
-            <img :src="anteprima" alt="anteprima" />
-            <span class="pending-name">{{ allegato.name }}</span>
-            <button title="Togli l'immagine" @click="rimuoviAllegato">×</button>
-          </div>
-          <div class="composer-box">
-            <button
-              class="attach"
-              title="Allega un'immagine (anche incolla o trascina)"
-              @click="fileRef?.click()"
-            >
-              +
-            </button>
-            <textarea
-              ref="inputRef"
-              v-model="draft"
-              rows="1"
-              :placeholder="
-                active.tipo === 'group'
-                  ? `Scrivi in #${titolo(active)}`
-                  : `Scrivi a @${titolo(active)}`
-              "
-              @input="autoResize"
-              @paste="onPaste"
-              @keydown.enter.exact.prevent="send"
-              @keydown.up="editLastIfEmpty"
-            />
-            <input
-              ref="fileRef"
-              type="file"
-              accept="image/png,image/jpeg,image/gif,image/webp"
-              hidden
-              @change="onFileScelto"
-            />
-          </div>
-        </footer>
       </template>
 
       <div v-else class="placeholder">
@@ -1166,6 +1169,13 @@ onUnmounted(() => {
   flex: 1;
   min-height: 0;
   display: flex;
+}
+.colonna {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
 .scroller {
   flex: 1;
