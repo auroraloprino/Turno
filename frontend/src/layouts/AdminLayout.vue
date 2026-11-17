@@ -177,6 +177,7 @@
       <div class="topbar">
         <h1>{{ pageTitle }}</h1>
         <div style="display: flex; align-items: center; gap: 12px">
+          <ThemeToggle />
           <span class="badge">Admin</span>
           <button
             style="
@@ -201,6 +202,7 @@
 </template>
 
 <script setup lang="ts">
+import ThemeToggle from "@/components/ThemeToggle.vue";
 import { computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";

@@ -762,7 +762,7 @@ input.plan-input {
   background: repeating-linear-gradient(
     135deg,
     transparent 0 6px,
-    rgba(255, 255, 255, 0.03) 6px 12px
+    var(--hover-strong) 6px 12px
   );
 }
 
@@ -854,10 +854,10 @@ input.plan-input {
   color: var(--purple-dark);
 }
 .month-cell.cov-1 {
-  background: #232032;
+  background: var(--oggi);
 }
 .month-cell.cov-2 {
-  background: #2a2545;
+  background: var(--oggi-forte);
 }
 .month-cell.cov-3 {
   background: var(--purple-light);
@@ -885,7 +885,7 @@ input.plan-input {
   border: 0.5px solid var(--border-md);
   border-radius: var(--radius-md);
   padding: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 24px var(--shadow);
 }
 .pop-title {
   font-size: 12px;

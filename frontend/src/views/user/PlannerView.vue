@@ -242,14 +242,14 @@ onMounted(reload);
   color: var(--text-primary);
 }
 .day-slot.me .slot-name {
-  color: #5ecfb0;
+  color: var(--teal-dark);
 }
 .slot-time {
   font-size: 10px;
   color: var(--text-secondary);
 }
 .day-slot.me .slot-time {
-  color: #5ecfb0;
+  color: var(--teal-dark);
   opacity: 0.7;
 }
 

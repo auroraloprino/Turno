@@ -956,7 +956,7 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: #191919;
+  background: var(--bg-panel);
   border-right: 0.5px solid var(--border);
 }
 .side-search {
@@ -965,7 +965,7 @@ onUnmounted(() => {
 }
 .side-search input {
   width: 100%;
-  background: #111;
+  background: var(--bg-input);
   border: none;
   border-radius: 6px;
   padding: 7px 10px;
@@ -1097,7 +1097,7 @@ onUnmounted(() => {
   gap: 8px;
   padding: 7px 14px;
   border-bottom: 0.5px solid var(--border);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px var(--shadow);
 }
 .back {
   display: none;
@@ -1245,7 +1245,7 @@ onUnmounted(() => {
 }
 .riga:hover,
 .riga.editing {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--hover);
 }
 .gutter {
   width: 30px;
@@ -1305,13 +1305,13 @@ onUnmounted(() => {
   margin-top: 2px;
 }
 .md :deep(code) {
-  background: #111;
+  background: var(--code-bg);
   border-radius: 4px;
   padding: 1px 4px;
   font-size: 12.5px;
 }
 .md :deep(pre) {
-  background: #111;
+  background: var(--code-bg);
   border: 0.5px solid var(--border);
   border-radius: 6px;
   padding: 8px 10px;
@@ -1346,7 +1346,7 @@ onUnmounted(() => {
   background: var(--bg-secondary);
   border: 0.5px solid var(--border-md);
   border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px var(--shadow);
   overflow: hidden;
   z-index: 1;
 }
@@ -1397,7 +1397,7 @@ onUnmounted(() => {
   width: 180px;
   flex-shrink: 0;
   border-left: 0.5px solid var(--border);
-  background: #191919;
+  background: var(--bg-panel);
   overflow-y: auto;
   padding: 0 8px;
 }
@@ -1574,7 +1574,7 @@ onUnmounted(() => {
 .new-group input[type="search"],
 .new-group input:not([type]) {
   width: 100%;
-  background: #111;
+  background: var(--bg-input);
   border: none;
   border-radius: 6px;
   padding: 6px 8px;
@@ -1638,7 +1638,7 @@ onUnmounted(() => {
   z-index: 1000;
   display: flex;
   overflow: auto;
-  background: rgba(0, 0, 0, 0.88);
+  background: var(--overlay);
 }
 .lightbox img {
   display: block;
@@ -1654,7 +1654,7 @@ onUnmounted(() => {
   display: flex;
   gap: 2px;
   padding: 4px;
-  background: rgba(30, 30, 30, 0.92);
+  background: var(--toolbar);
   border: 0.5px solid var(--border-md);
   border-radius: 8px;
 }
