@@ -1558,6 +1558,13 @@ onUnmounted(() => {
 .members .new-group {
   margin: 0 0 8px;
 }
+.members .new-group-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.members .pick-count {
+  flex-basis: 100%;
+}
 .members {
   width: 180px;
   flex-shrink: 0;
