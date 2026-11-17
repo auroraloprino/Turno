@@ -121,6 +121,51 @@ public class ChatService {
         return ChatDto.ConversazioneResponse.from(conv, creatore.getId());
     }
 
+    // qualsiasi membro può aggiungere persone, come chiunque può creare un gruppo
+    public ChatDto.ConversazioneResponse aggiungi(Long conversazioneId, List<Long> userIds, AuthUser utente) {
+        Conversazione conv = partecipante(conversazioneId, utente.getId());
+        if (!conv.getTipo().equals("group"))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Si possono aggiungere persone solo a un gruppo");
+        Set<Long> nuovi = new HashSet<>(userIds);
+        nuovi.removeAll(conv.getPartecipantiIds());
+        if (nuovi.isEmpty())
+            return ChatDto.ConversazioneResponse.from(conv, utente.getId());
+        Set<Long> tutti = new HashSet<>(conv.getPartecipantiIds());
+        tutti.addAll(nuovi);
+        conv.setPartecipantiIds(tutti);
+        convRepo.save(conv);
+        // i nuovi vedono comparire il gruppo, gli altri ricaricano l'elenco dei membri
+        tutti.stream().filter(id -> !id.equals(utente.getId())).forEach(id -> broker.convertAndSend(
+                "/topic/notifiche/" + id,
+                Map.of("tipo", "gruppo", "conversazioneId", conv.getId(),
+                        "messaggio", nuovi.contains(id)
+                                ? utente.getUsername() + " ti ha aggiunto al gruppo " + conv.getNome()
+                                : "Nuovi membri nel gruppo " + conv.getNome())));
+        return ChatDto.ConversazioneResponse.from(conv, utente.getId());
+    }
+
+    // si esce solo dai gruppi, una chat privata ha sempre due persone
+    public void abbandona(Long conversazioneId, AuthUser utente) {
+        Conversazione conv = partecipante(conversazioneId, utente.getId());
+        if (!conv.getTipo().equals("group"))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Si può uscire solo da un gruppo");
+        Set<Long> rimasti = new HashSet<>(conv.getPartecipantiIds());
+        rimasti.remove(utente.getId());
+        if (rimasti.isEmpty()) {
+            // l'ultimo che esce distrugge il gruppo, non resta niente di orfano su Mongo
+            immagini.eliminaPerConversazioni(List.of(conv.getId()));
+            msgRepo.deleteByConversazioneIdIn(List.of(conv.getId()));
+            convRepo.delete(conv);
+            return;
+        }
+        conv.setPartecipantiIds(rimasti);
+        convRepo.save(conv);
+        // agli altri arriva la stessa notifica della creazione, così ricaricano l'elenco dei membri
+        rimasti.forEach(id -> broker.convertAndSend("/topic/notifiche/" + id,
+                Map.of("tipo", "gruppo", "conversazioneId", conv.getId(),
+                        "messaggio", utente.getUsername() + " è uscito dal gruppo " + conv.getNome())));
+    }
+
     // le chat private con l'utente spariscono, dai gruppi viene solo tolto e i suoi messaggi restano leggibili
     public void eliminaPerUtente(Long userId) {
         List<Conversazione> sue = convRepo.findByPartecipanteId(userId);

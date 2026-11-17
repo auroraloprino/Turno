@@ -101,6 +101,20 @@ public class ChatController {
                 .body(service.creaGruppo(request.nome(), request.userIds(), user));
     }
 
+    @PostMapping("/conversazioni/{id}/partecipanti")
+    public ResponseEntity<ChatDto.ConversazioneResponse> aggiungi(
+            @PathVariable Long id,
+            @Valid @RequestBody AggiungiRequest request,
+            @AuthenticationPrincipal AuthUser user) {
+        return ResponseEntity.ok(service.aggiungi(id, request.userIds(), user));
+    }
+
+    @DeleteMapping("/conversazioni/{id}/partecipanti/me")
+    public ResponseEntity<Void> abbandona(@PathVariable Long id, @AuthenticationPrincipal AuthUser user) {
+        service.abbandona(id, user);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/conversazioni/privata")
     public ResponseEntity<ChatDto.ConversazioneResponse> creaPrivata(
             @AuthenticationPrincipal AuthUser user,
@@ -115,6 +129,9 @@ public class ChatController {
     public ResponseEntity<Void> eliminaPerUtente(@PathVariable Long userId) {
         service.eliminaPerUtente(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    public record AggiungiRequest(@NotEmpty List<Long> userIds) {
     }
 
     public record CreaGruppoRequest(@NotBlank String nome, @NotEmpty List<Long> userIds) {

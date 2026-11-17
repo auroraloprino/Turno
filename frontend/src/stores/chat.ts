@@ -48,7 +48,13 @@ export const useChatStore = defineStore("chat", () => {
     const existingMap = new Map(conversazioni.value.map((c) => [c.id, c]));
     conversazioni.value = data
       .filter((c) => !dismissed.has(c.id))
-      .map((c) => existingMap.get(c.id) ?? { ...c, messaggi: [], nonLetti: 0 });
+      .map((c) => {
+        const esistente = existingMap.get(c.id);
+        // tengo messaggi e non letti ma aggiorno nome e membri, che cambiano quando qualcuno entra o esce
+        return esistente
+          ? Object.assign(esistente, { nome: c.nome, partecipanti: c.partecipanti })
+          : { ...c, messaggi: [], nonLetti: 0 };
+      });
     data.forEach((c) => _subscribe(c.id));
   }
 
@@ -110,6 +116,21 @@ export const useChatStore = defineStore("chat", () => {
 
   async function elimina(messaggioId: number) {
     await api.delete(`/api/chat/messaggi/${messaggioId}`);
+  }
+
+  async function aggiungiMembri(id: number, userIds: number[]) {
+    const conv = await api.post<Omit<Conversazione, "messaggi" | "nonLetti">>(
+      `/api/chat/conversazioni/${id}/partecipanti`,
+      { userIds },
+    );
+    const locale = conversazioni.value.find((c) => c.id === id);
+    if (locale) locale.partecipanti = conv.partecipanti;
+  }
+
+  async function abbandona(id: number) {
+    await api.delete(`/api/chat/conversazioni/${id}/partecipanti/me`);
+    const idx = conversazioni.value.findIndex((c) => c.id === id);
+    if (idx >= 0) conversazioni.value.splice(idx, 1);
   }
 
   function rimuovi(id: number) {
@@ -193,6 +214,8 @@ export const useChatStore = defineStore("chat", () => {
     modifica,
     elimina,
     rimuovi,
+    abbandona,
+    aggiungiMembri,
     saveDismissed: _saveDismissed,
     connetti,
     disconnetti,

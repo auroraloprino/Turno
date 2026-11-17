@@ -71,8 +71,8 @@
             <span v-if="c.nonLetti" class="non-letti">{{ c.nonLetti }}</span>
             <button
               class="conv-close"
-              title="Nascondi"
-              @click.stop="chiudiConv(c.id)"
+              title="Esci dal gruppo"
+              @click.stop="chiediAbbandono(c)"
             >
               ×
             </button>
@@ -178,6 +178,14 @@
               @click="showMembers = !showMembers"
             >
               Membri
+            </button>
+            <button
+              v-if="active.tipo === 'group'"
+              class="head-btn head-esci"
+              title="Esci dal gruppo"
+              @click="chiediAbbandono(active)"
+            >
+              Esci
             </button>
           </div>
         </header>
@@ -350,7 +358,49 @@
           <aside v-if="active.tipo === 'group' && showMembers" class="members">
             <div class="side-section">
               Membri — {{ active.partecipanti.length }}
+              <button
+                class="side-add"
+                title="Aggiungi persone al gruppo"
+                @click="iniziaAggiunta"
+              >
+                +
+              </button>
             </div>
+
+            <div v-if="aggiungendo" class="new-group">
+              <input
+                ref="cercaAggiuntiRef"
+                v-model="cercaAggiunti"
+                type="search"
+                placeholder="Cerca persone"
+                @keydown.esc="annullaAggiunta"
+              />
+              <div class="pick-list">
+                <label v-for="u in candidatiAggiunta" :key="u.id" class="pick">
+                  <input v-model="daAggiungere" type="checkbox" :value="u.id" />
+                  <span class="av xs" :style="avatarStyle(u.id)">
+                    {{ initials(u.name) }}
+                  </span>
+                  <span class="conv-name">{{ u.name }}</span>
+                </label>
+                <div v-if="!candidatiAggiunta.length" class="side-empty">
+                  Nessuna persona da aggiungere.
+                </div>
+              </div>
+              <div v-if="erroreAggiunta" class="send-error">{{ erroreAggiunta }}</div>
+              <div class="new-group-actions">
+                <span class="pick-count">{{ daAggiungere.length }} selezionati</span>
+                <button class="btn-ghost" @click="annullaAggiunta">Annulla</button>
+                <button
+                  class="btn-primary"
+                  :disabled="!daAggiungere.length"
+                  @click="confermaAggiunta"
+                >
+                  Aggiungi
+                </button>
+              </div>
+            </div>
+
             <div v-for="id in active.partecipanti" :key="id" class="member">
               <span class="av sm" :style="avatarStyle(id)">
                 {{ initials(nomeUtente(id)) }}
@@ -366,6 +416,22 @@
         <div>Seleziona una conversazione o cerca una persona per iniziare.</div>
       </div>
     </section>
+
+    <Teleport to="body">
+      <div v-if="conferma" class="conferma-sfondo" @click.self="conferma = null">
+        <div class="conferma" role="dialog" aria-modal="true">
+          <div class="conferma-titolo">{{ conferma.titolo }}</div>
+          <div class="conferma-testo">{{ conferma.testo }}</div>
+          <div v-if="conferma.errore" class="send-error">{{ conferma.errore }}</div>
+          <div class="conferma-azioni">
+            <button ref="annullaRef" class="btn-ghost" @click="conferma = null">Annulla</button>
+            <button class="btn-pericolo" :disabled="conferma.inCorso" @click="eseguiConferma">
+              {{ conferma.etichetta }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
 
     <Teleport to="body">
       <div
@@ -825,7 +891,9 @@ function chiudiLightbox() {
 }
 
 function onTasto(e: KeyboardEvent) {
-  if (e.key === "Escape" && lightbox.value) chiudiLightbox();
+  if (e.key !== "Escape") return;
+  if (conferma.value) conferma.value = null;
+  else if (lightbox.value) chiudiLightbox();
 }
 
 const candidatiGruppo = computed(() => {
@@ -896,9 +964,103 @@ function editLastIfEmpty(e: KeyboardEvent) {
   startEdit(last);
 }
 
-async function deleteMsg(msgId: number) {
-  if (!confirm("Eliminare questo messaggio?")) return;
-  await store.elimina(msgId);
+interface Conferma {
+  titolo: string;
+  testo: string;
+  etichetta: string;
+  azione: () => Promise<void>;
+  inCorso?: boolean;
+  errore?: string;
+}
+
+const conferma = ref<Conferma | null>(null);
+const annullaRef = ref<HTMLButtonElement | null>(null);
+
+// il fuoco va su Annulla, così un Invio di troppo non conferma per sbaglio
+function chiedi(c: Conferma) {
+  conferma.value = c;
+  nextTick(() => annullaRef.value?.focus());
+}
+
+async function eseguiConferma() {
+  const c = conferma.value;
+  if (!c || c.inCorso) return;
+  c.inCorso = true;
+  c.errore = "";
+  try {
+    await c.azione();
+    conferma.value = null;
+  } catch (e) {
+    c.errore = e instanceof Error ? e.message : "Operazione non riuscita.";
+    c.inCorso = false;
+  }
+}
+
+function deleteMsg(msgId: number) {
+  chiedi({
+    titolo: "Eliminare il messaggio?",
+    testo: "Il messaggio sparirà per tutti i partecipanti alla conversazione.",
+    etichetta: "Elimina",
+    azione: () => store.elimina(msgId),
+  });
+}
+
+const aggiungendo = ref(false);
+const cercaAggiunti = ref("");
+const daAggiungere = ref<number[]>([]);
+const erroreAggiunta = ref("");
+const cercaAggiuntiRef = ref<HTMLInputElement | null>(null);
+
+// solo chi non è già nel gruppo
+const candidatiAggiunta = computed(() => {
+  const membri = new Set(active.value?.partecipanti ?? []);
+  const q = cercaAggiunti.value.trim().toLowerCase();
+  return utenti.value
+    .filter((u) => !membri.has(u.id))
+    .filter((u) => !q || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+    .slice(0, 50);
+});
+
+function iniziaAggiunta() {
+  aggiungendo.value = !aggiungendo.value;
+  erroreAggiunta.value = "";
+  if (aggiungendo.value) nextTick(() => cercaAggiuntiRef.value?.focus());
+}
+
+function annullaAggiunta() {
+  aggiungendo.value = false;
+  cercaAggiunti.value = "";
+  daAggiungere.value = [];
+  erroreAggiunta.value = "";
+}
+
+async function confermaAggiunta() {
+  if (!active.value) return;
+  erroreAggiunta.value = "";
+  try {
+    await store.aggiungiMembri(active.value.id, daAggiungere.value);
+    annullaAggiunta();
+  } catch (e) {
+    erroreAggiunta.value = e instanceof Error ? e.message : "Aggiunta non riuscita.";
+  }
+}
+
+// cambiando conversazione il pannello di aggiunta si chiude
+watch(activeId, annullaAggiunta);
+
+function chiediAbbandono(c: Conversazione) {
+  const ultimo = c.partecipanti.length <= 1;
+  chiedi({
+    titolo: `Uscire da #${c.nome}?`,
+    testo: ultimo
+      ? "Sei l'ultimo membro, uscendo il gruppo verrà eliminato con tutti i messaggi."
+      : "Non riceverai più i messaggi del gruppo. Per rientrare dovrà aggiungerti uno dei membri rimasti.",
+    etichetta: "Esci dal gruppo",
+    azione: async () => {
+      await store.abbandona(c.id);
+      if (activeId.value === c.id) chiudiAttiva();
+    },
+  });
 }
 
 async function avviaPrivata(u: Utente) {
@@ -1393,6 +1555,9 @@ onUnmounted(() => {
   cursor: pointer;
 }
 
+.members .new-group {
+  margin: 0 0 8px;
+}
 .members {
   width: 180px;
   flex-shrink: 0;
@@ -1676,6 +1841,61 @@ onUnmounted(() => {
   font-size: 12px !important;
   min-width: 52px !important;
   font-variant-numeric: tabular-nums;
+}
+
+.conferma-sfondo {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: var(--overlay);
+}
+.conferma {
+  width: 100%;
+  max-width: 380px;
+  padding: 18px 20px 16px;
+  background: var(--bg-primary);
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px var(--shadow);
+}
+.conferma-titolo {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.conferma-testo {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+.conferma-azioni {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.btn-pericolo {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--coral-dark);
+  color: #fff;
+}
+.btn-pericolo:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.head-esci:hover {
+  color: var(--coral-dark);
+  border-color: var(--coral-dark);
 }
 
 @media (max-width: 1100px) {
